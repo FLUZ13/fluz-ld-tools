@@ -25,6 +25,13 @@ describe("game data snapshot", () => {
     expect(DATA.runes.find((rune) => rune.id === "time-reversal")?.image).toBe("/assets/runes/1045.png");
   });
 
+  it("uses the verified Immortal portraits rather than their base-form artwork", () => {
+    expect(DATA.immortals.find((immortal) => immortal.id === "top-vayne")?.image).toBe("/assets/immortals/15011.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "great-kitty-mage")?.image).toBe("/assets/immortals/1400601.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "colony-tar")?.image).toBe("/assets/immortals/1501401.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "evergreen-verdee")?.image).toBe("/assets/immortals/1501901.png");
+  });
+
   it("has valid three-mode ratings for every rune and Immortal in both meta versions", () => {
     for (const metaVersion of ["1.0", "1.1"] as const) {
       const ratings = ratingsFor(metaVersion);

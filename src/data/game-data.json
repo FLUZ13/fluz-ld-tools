@@ -1144,8 +1144,8 @@
       "name": "Top Vayne",
       "assetId": "14006",
       "role": "physical",
-      "image": "/assets/immortals/14006.png",
-      "boardImage": "/assets/board/guardians/14006.png",
+      "image": "/assets/immortals/15011.png",
+      "boardImage": "/assets/board/guardians/15011.png",
       "provisional": false
     },
     {
@@ -1243,8 +1243,8 @@
       "name": "Great Kitty Mage",
       "assetId": "15011",
       "role": "support",
-      "image": "/assets/immortals/15011.png",
-      "boardImage": "/assets/board/guardians/15011.png",
+      "image": "/assets/immortals/1400601.png",
+      "boardImage": "/assets/board/guardians/1400601.png",
       "provisional": false
     },
     {
@@ -1252,8 +1252,8 @@
       "name": "Colony Tar",
       "assetId": "15014",
       "role": "physical",
-      "image": "/assets/immortals/15014.png",
-      "boardImage": "/assets/board/guardians/15014.png",
+      "image": "/assets/immortals/1501401.png",
+      "boardImage": "/assets/board/guardians/1501401.png",
       "provisional": true
     },
     {
@@ -1288,8 +1288,8 @@
       "name": "Evergreen Verdee",
       "assetId": "15019",
       "role": "physical",
-      "image": "/assets/immortals/15019.png",
-      "boardImage": "/assets/board/guardians/15019.png",
+      "image": "/assets/immortals/1501901.png",
+      "boardImage": "/assets/board/guardians/1501901.png",
       "provisional": true
     },
     {

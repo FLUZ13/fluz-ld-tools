@@ -30,15 +30,23 @@ export interface PublishedBoard {
   updatedAt: string;
 }
 
-export const BOARD_MAPS: Array<{ id: BoardMapId; name: string; image: string }> = [
-  { id: "normal", name: "Normal", image: "/assets/board/maps/normal.png" },
-  { id: "hard-red", name: "Hard", image: "/assets/board/maps/hard.png" },
-  { id: "hell", name: "Hell", image: "/assets/board/maps/hell.png" },
-  { id: "god", name: "God", image: "/assets/board/maps/god.png" },
-  { id: "primeval", name: "Primeval", image: "/assets/board/maps/primeval.png" },
-  { id: "invasion", name: "Invasion", image: "/assets/board/maps/invasion.png" },
-  { id: "guild", name: "Guild Battle", image: "/assets/board/maps/guild.png" },
-  { id: "extreme", name: "Extreme", image: "/assets/board/maps/extreme.png" },
+export interface BoardMap {
+  id: BoardMapId;
+  name: string;
+  image: string;
+  columns: number;
+  rows: number;
+}
+
+export const BOARD_MAPS: BoardMap[] = [
+  { id: "normal", name: "Normal", image: "/assets/board/maps/normal.png", columns: 6, rows: 3 },
+  { id: "hard-red", name: "Hard", image: "/assets/board/maps/hard.png", columns: 6, rows: 3 },
+  { id: "hell", name: "Hell", image: "/assets/board/maps/hell.png", columns: 6, rows: 3 },
+  { id: "god", name: "God", image: "/assets/board/maps/god.png", columns: 6, rows: 3 },
+  { id: "primeval", name: "Primeval", image: "/assets/board/maps/primeval.png", columns: 6, rows: 3 },
+  { id: "invasion", name: "Invasion", image: "/assets/board/maps/invasion.png", columns: 6, rows: 3 },
+  { id: "guild", name: "Guild Battle", image: "/assets/board/maps/guild.png", columns: 6, rows: 4 },
+  { id: "extreme", name: "Extreme", image: "/assets/board/maps/extreme.png", columns: 6, rows: 5 },
 ];
 
 const baseGuardians: Array<[string, string, GuardianRarity]> = [
@@ -75,6 +83,16 @@ export const BOARD_GUARDIANS: BoardGuardian[] = [
 
 export const BOARD_GUARDIAN_BY_ID = new Map(BOARD_GUARDIANS.map((guardian) => [guardian.id, guardian]));
 
+export function slotsForMap(map: BoardMapId) {
+  const activeMap = getBoardMap(map);
+  return activeMap.columns * activeMap.rows;
+}
+
+export function resizeBoardSlots(slots: BoardState["slots"], map: BoardMapId): BoardState["slots"] {
+  const count = slotsForMap(map);
+  return [0, 1].map((player) => Array.from({ length: count }, (_, index) => slots[player]?.[index] ?? null)) as BoardState["slots"];
+}
+
 export function createBoardState(): BoardState {
   return {
     schemaVersion: 1,
@@ -82,7 +100,7 @@ export function createBoardState(): BoardState {
     title: "My Lucky Defense board",
     map: "normal",
     players: 1,
-    slots: [Array(18).fill(null), Array(18).fill(null)],
+    slots: [Array(slotsForMap("normal")).fill(null), Array(slotsForMap("normal")).fill(null)],
     updatedAt: new Date().toISOString(),
   };
 }
@@ -101,7 +119,11 @@ export function getBoardMap(value: unknown) {
 export function migrateBoardState(value: unknown): BoardState | null {
   if (!value || typeof value !== "object") return null;
   const board = value as Partial<BoardState> & { map?: unknown };
-  const normalized = { ...board, map: normalizeBoardMapId(board.map) };
+  const map = normalizeBoardMapId(board.map);
+  const slotsAreValid = Array.isArray(board.slots) && board.slots.length === 2 && board.slots.every((slots) =>
+    Array.isArray(slots) && slots.every((id) => id === null || (typeof id === "string" && BOARD_GUARDIAN_BY_ID.has(id))),
+  );
+  const normalized = { ...board, map, slots: slotsAreValid ? resizeBoardSlots(board.slots as BoardState["slots"], map) : board.slots };
   return isBoardState(normalized) ? normalized : null;
 }
 
@@ -110,7 +132,7 @@ export function isBoardState(value: unknown): value is BoardState {
   const board = value as Partial<BoardState>;
   const maps = new Set(BOARD_MAPS.map((map) => map.id));
   const validSlots = Array.isArray(board.slots) && board.slots.length === 2 && board.slots.every((slots) =>
-    Array.isArray(slots) && slots.length === 18 && slots.every((id) => id === null || (typeof id === "string" && BOARD_GUARDIAN_BY_ID.has(id))),
+    Array.isArray(slots) && slots.length === slotsForMap(board.map as BoardMapId) && slots.every((id) => id === null || (typeof id === "string" && BOARD_GUARDIAN_BY_ID.has(id))),
   );
   return board.schemaVersion === 1 && typeof board.id === "string" && typeof board.title === "string" &&
     board.title.length <= 80 && maps.has(board.map as BoardMapId) && (board.players === 1 || board.players === 2) && validSlots;

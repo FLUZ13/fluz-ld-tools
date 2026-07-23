@@ -1,8 +1,8 @@
-import { Check, Copy, Eraser, FileDown, FileUp, ImageDown, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users, ZoomOut } from "lucide-react";
+import { Check, Copy, FileDown, FileUp, ImageDown, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
 import { publishBoard } from "../board/api";
 import { decodeSharedBoard, downloadBlob, encodeSharedBoard, renderBoardPng } from "../board/export";
-import { BOARD_GUARDIANS, BOARD_MAPS, createBoardState, getBoardMap, migrateBoardState, type BoardState, type GuardianRarity } from "../board/model";
+import { BOARD_GUARDIANS, BOARD_MAPS, createBoardState, getBoardMap, migrateBoardState, resizeBoardSlots, type BoardState, type GuardianRarity } from "../board/model";
 import { deleteBoardSnapshot, listBoardSnapshots, loadBoardDraft, saveBoardDraft, saveBoardSnapshot } from "../board/storage";
 
 type GuardianFilter = GuardianRarity | "all" | "basic";
@@ -30,7 +30,6 @@ function fileSlug(value: string) {
 export function BoardBuilder() {
   const [board, setBoard] = useState(createBoardState);
   const [loaded, setLoaded] = useState(false);
-  const [selectedGuardian, setSelectedGuardian] = useState<string | null>(null);
   const [rarity, setRarity] = useState<GuardianFilter>("all");
   const [query, setQuery] = useState("");
   const [savedBoards, setSavedBoards] = useState<BoardState[]>([]);
@@ -150,8 +149,12 @@ export function BoardBuilder() {
     transform: `scale(${boardScale})`,
   };
 
-  const placeGuardian = (player: number, slot: number, guardianId = selectedGuardian) => {
+  const placeGuardian = (player: number, slot: number, guardianId: string) => {
     updateBoard((draft) => { draft.slots[player][slot] = guardianId; });
+  };
+
+  const removeGuardian = (player: number, slot: number) => {
+    updateBoard((draft) => { draft.slots[player][slot] = null; });
   };
 
   const moveGuardian = (source: BoardSlot, target: BoardSlot) => {
@@ -168,7 +171,7 @@ export function BoardBuilder() {
     try {
       const payload = event.dataTransfer.getData("application/x-ld-board-slot") || event.dataTransfer.getData("text/plain");
       const value = JSON.parse(payload.replace("ld-board-slot:", "")) as BoardSlot;
-      if (Number.isInteger(value.player) && Number.isInteger(value.slot) && value.player >= 0 && value.player < 2 && value.slot >= 0 && value.slot < 18) return value;
+      if (Number.isInteger(value.player) && Number.isInteger(value.slot) && value.player >= 0 && value.player < 2 && value.slot >= 0 && value.slot < 30) return value;
     } catch { /* A guardian-library drag has no board-slot payload. */ }
     return null;
   };
@@ -220,7 +223,7 @@ export function BoardBuilder() {
     <main className="board-builder-page">
       <section className="board-toolbar">
         <input className="board-title-input" value={board.title} maxLength={80} aria-label="Board title" onChange={(event) => updateBoard((draft) => { draft.title = event.target.value; })} />
-        <label className="select-control"><span>Map</span><select value={board.map} onChange={(event) => updateBoard((draft) => { draft.map = event.target.value as BoardState["map"]; })}>{BOARD_MAPS.map((map) => <option key={map.id} value={map.id}>{map.name}</option>)}</select></label>
+        <label className="select-control"><span>Map</span><select value={board.map} onChange={(event) => updateBoard((draft) => { const map = event.target.value as BoardState["map"]; draft.map = map; draft.slots = resizeBoardSlots(draft.slots, map); })}>{BOARD_MAPS.map((map) => <option key={map.id} value={map.id}>{map.name}</option>)}</select></label>
         <div className="segmented-control" aria-label="Number of players"><button className={board.players === 1 ? "active" : ""} onClick={() => updateBoard((draft) => { draft.players = 1; })}>1 player</button><button className={board.players === 2 ? "active" : ""} onClick={() => updateBoard((draft) => { draft.players = 2; })}><Users />2 players</button></div>
         <label className="board-zoom-control" title="Board zoom"><ZoomOut /><input type="range" min={MIN_BOARD_ZOOM} max={MAX_BOARD_ZOOM} step="5" value={boardZoom} onChange={(event) => setBoardZoom(Number(event.target.value))} aria-label="Board zoom" /><span>{boardZoom}%</span></label>
         <div className="board-toolbar-actions">
@@ -240,14 +243,13 @@ export function BoardBuilder() {
 
       <div className="board-workspace">
         <section className="guardian-library">
-          <header><div><h2>Guardians</h2><span>{filteredGuardians.length} available</span></div><button className={`icon-button quiet ${selectedGuardian === null ? "selected" : ""}`} onClick={() => setSelectedGuardian(null)} title="Erase a slot" aria-label="Erase a slot"><Eraser /></button></header>
+          <header><div><h2>Guardians</h2><span>{filteredGuardians.length} available</span></div></header>
           <label className="search-field"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search guardians" /></label>
           <div className="rarity-tabs">{rarities.map((item) => <button key={item.id} className={rarity === item.id ? "active" : ""} onClick={() => setRarity(item.id)}>{item.label}</button>)}</div>
-          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`${selectedGuardian === guardian.id ? "selected" : ""} rarity-${guardian.rarity}`} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("text/guardian-id", guardian.id); }} onClick={() => setSelectedGuardian(guardian.id)} title={guardian.name}><img src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
+          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`rarity-${guardian.rarity}`} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("text/guardian-id", guardian.id); }} title={`Drag ${guardian.name} onto the board`}><img src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
         </section>
 
         <section className="board-stage" aria-label="Board canvas" ref={boardStageRef}>
-          <div className="selection-status">{selectedGuardian ? <>Selected: <strong>{BOARD_GUARDIANS.find((guardian) => guardian.id === selectedGuardian)?.name}</strong></> : <><Eraser /> Erase mode</>}</div>
           <div className="board-zoom-viewport" style={boardViewportStyle}>
             <div className={`interactive-boards players-${board.players}`} ref={boardCanvasRef} style={boardCanvasStyle}>
               {board.slots.slice(0, board.players).map((slots, player) => (
@@ -261,7 +263,7 @@ export function BoardBuilder() {
                       key={slot}
                       draggable={Boolean(guardian)}
                       className={`${guardian ? `filled rarity-${guardian.rarity}` : ""} ${isDragSource ? "drag-source" : ""} ${isDropTarget ? "drop-target" : ""}`}
-                      onClick={() => placeGuardian(player, slot)}
+                      onClick={() => { if (guardian) removeGuardian(player, slot); }}
                       onDragStart={(event) => {
                         if (!guardian) return;
                         const source = { player, slot };
@@ -284,7 +286,7 @@ export function BoardBuilder() {
                         setDraggedSlot(null);
                         setDropTarget(null);
                       }}
-                      title={guardian ? `${guardian.name}. Drag to move, or click to replace or erase.` : `Empty slot ${slot + 1}`}>
+                      title={guardian ? `${guardian.name}. Drag to move or click to remove.` : `Empty slot ${slot + 1}. Drag a guardian here.`}>
                       <span>{slot + 1}</span>{guardian && <img src={guardian.image} alt={guardian.name} />}
                     </button>;
                   })}</div>

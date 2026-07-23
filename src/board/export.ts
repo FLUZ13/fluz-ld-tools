@@ -16,14 +16,16 @@ function drawCover(context: CanvasRenderingContext2D, image: HTMLImageElement, x
 
 export async function renderBoardPng(board: BoardState) {
   const width = 1200;
-  const boardHeight = 450;
-  const height = board.players === 2 ? 1060 : 610;
+  const map = getBoardMap(board.map);
+  const cell = 103;
+  const gap = 10;
+  const boardHeight = 70 + map.rows * (cell + gap);
+  const height = 112 + board.players * boardHeight + (board.players - 1) * 18 + 42;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is unavailable in this browser.");
-  const map = getBoardMap(board.map);
   const mapImage = await loadImage(map.image);
 
   context.fillStyle = "#352b22";
@@ -44,7 +46,7 @@ export async function renderBoardPng(board: BoardState) {
 
   for (let player = 0; player < board.players; player += 1) {
     const x = 35;
-    const y = 112 + player * 465;
+    const y = 112 + player * (boardHeight + 18);
     const sectionWidth = width - 70;
     drawCover(context, mapImage, x, y, sectionWidth, boardHeight);
     context.fillStyle = "rgba(44, 31, 23, .35)";
@@ -58,13 +60,12 @@ export async function renderBoardPng(board: BoardState) {
     context.font = "700 18px Arial";
     context.fillText(`PLAYER ${player + 1}`, x + 27, y + 37);
 
-    const gap = 10;
-    const gridX = x + 205;
+    const gridWidth = map.columns * cell + (map.columns - 1) * gap;
+    const gridX = x + (sectionWidth - gridWidth) / 2;
     const gridY = y + 54;
-    const cell = 103;
-    for (let slot = 0; slot < 18; slot += 1) {
-      const column = slot % 6;
-      const row = Math.floor(slot / 6);
+    for (let slot = 0; slot < map.columns * map.rows; slot += 1) {
+      const column = slot % map.columns;
+      const row = Math.floor(slot / map.columns);
       const cellX = gridX + column * (cell + gap);
       const cellY = gridY + row * (cell + gap);
       context.fillStyle = "rgba(241, 223, 189, .82)";

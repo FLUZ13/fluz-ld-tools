@@ -2,7 +2,7 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "fluz-ld-tools",
   "main": "./worker/index.ts",
-  "compatibility_date": "2026-07-22",
+  "compatibility_date": "2026-07-23",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "./dist",
@@ -29,13 +29,24 @@
       "name": "SYNC_RATE_LIMITER",
       "namespace_id": "replace-with-your-rate-limit-namespace-id",
       "simple": {
-        "limit": 120,
+        "limit": 60,
+        "period": 60
+      }
+    },
+    {
+      "name": "WRITE_RATE_LIMITER",
+      "namespace_id": "replace-with-a-second-rate-limit-namespace-id",
+      "simple": {
+        "limit": 12,
         "period": 60
       }
     }
   ],
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  },
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 0.05
   }
 }

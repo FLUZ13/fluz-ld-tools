@@ -1,4 +1,4 @@
-import { Check, Copy, Eraser, FileDown, FileUp, ImageDown, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users } from "lucide-react";
+import { Check, Copy, Eraser, FileDown, FileUp, ImageDown, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { publishBoard } from "../board/api";
 import { decodeSharedBoard, downloadBlob, encodeSharedBoard, renderBoardPng } from "../board/export";
@@ -11,6 +11,15 @@ const rarities: Array<{ id: GuardianFilter; label: string }> = [
   { id: "all", label: "All" }, { id: "basic", label: "Basic Guardians" },
   { id: "mythic", label: "Mythic" }, { id: "immortal", label: "Immortal" },
 ];
+const MIN_BOARD_ZOOM = 55;
+const MAX_BOARD_ZOOM = 100;
+
+function loadBoardZoom() {
+  const stored = localStorage.getItem("ld-board-zoom");
+  if (stored === null) return 75;
+  const saved = Number(stored);
+  return Number.isFinite(saved) ? Math.min(MAX_BOARD_ZOOM, Math.max(MIN_BOARD_ZOOM, saved)) : 75;
+}
 
 function fileSlug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "lucky-defense-board";
@@ -26,6 +35,7 @@ export function BoardBuilder() {
   const [notice, setNotice] = useState("");
   const [past, setPast] = useState<BoardState[]>([]);
   const [future, setFuture] = useState<BoardState[]>([]);
+  const [boardZoom, setBoardZoom] = useState(loadBoardZoom);
   const fileInput = useRef<HTMLInputElement>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const receivedRemoteUpdate = useRef(false);
@@ -66,6 +76,10 @@ export function BoardBuilder() {
     }, 300);
     return () => window.clearTimeout(timeout);
   }, [board, loaded]);
+
+  useEffect(() => {
+    localStorage.setItem("ld-board-zoom", String(boardZoom));
+  }, [boardZoom]);
 
   const updateBoard = useCallback((recipe: (draft: BoardState) => void) => {
     setBoard((current) => {
@@ -154,6 +168,7 @@ export function BoardBuilder() {
         <input className="board-title-input" value={board.title} maxLength={80} aria-label="Board title" onChange={(event) => updateBoard((draft) => { draft.title = event.target.value; })} />
         <label className="select-control"><span>Map</span><select value={board.map} onChange={(event) => updateBoard((draft) => { draft.map = event.target.value as BoardState["map"]; })}>{BOARD_MAPS.map((map) => <option key={map.id} value={map.id}>{map.name}</option>)}</select></label>
         <div className="segmented-control" aria-label="Number of players"><button className={board.players === 1 ? "active" : ""} onClick={() => updateBoard((draft) => { draft.players = 1; })}>1 player</button><button className={board.players === 2 ? "active" : ""} onClick={() => updateBoard((draft) => { draft.players = 2; })}><Users />2 players</button></div>
+        <label className="board-zoom-control" title="Board zoom"><ZoomOut /><input type="range" min={MIN_BOARD_ZOOM} max={MAX_BOARD_ZOOM} step="5" value={boardZoom} onChange={(event) => setBoardZoom(Number(event.target.value))} aria-label="Board zoom" /><span>{boardZoom}%</span></label>
         <div className="board-toolbar-actions">
           <button className="icon-button" onClick={undo} disabled={past.length === 0} title="Undo" aria-label="Undo"><Undo2 /></button>
           <button className="icon-button" onClick={redo} disabled={future.length === 0} title="Redo" aria-label="Redo"><Redo2 /></button>
@@ -179,7 +194,7 @@ export function BoardBuilder() {
 
         <section className="board-stage" aria-label="Board canvas">
           <div className="selection-status">{selectedGuardian ? <>Selected: <strong>{BOARD_GUARDIANS.find((guardian) => guardian.id === selectedGuardian)?.name}</strong></> : <><Eraser /> Erase mode</>}</div>
-          <div className={`interactive-boards players-${board.players}`} style={{ backgroundImage: `linear-gradient(rgba(53,43,34,.28), rgba(53,43,34,.46)), url(${activeMap.image})` }}>
+          <div className={`interactive-boards players-${board.players}`} style={{ backgroundImage: `linear-gradient(rgba(53,43,34,.28), rgba(53,43,34,.46)), url(${activeMap.image})`, zoom: boardZoom / 100 }}>
             {board.slots.slice(0, board.players).map((slots, player) => (
               <div className="interactive-board" key={player}>
                 <span className="interactive-player-label">Player {player + 1}</span>

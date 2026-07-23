@@ -10,7 +10,7 @@ const writeSchema = z.object({
   revision: z.number().int().min(0),
 });
 const restoreSchema = z.object({ revision: z.number().int().positive(), currentRevision: z.number().int().min(0) });
-const boardMapSchema = z.enum(["hard", "hell", "god", "primeval", "invasion", "guild", "extreme"]);
+const boardMapSchema = z.enum(["normal", "hard-red", "hell", "god", "primeval", "invasion", "guild", "extreme"]);
 const guardianSchema = z.string().regex(/^\d{4,5}$/).nullable();
 const slotsSchema = z.array(z.array(guardianSchema).length(18)).length(2);
 const boardSchema = z.object({
@@ -43,9 +43,8 @@ async function sha256(value: string) {
 }
 
 function secureEqual(left: string, right: string) {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+  if (!/^[a-f0-9]{64}$/.test(left) || !/^[a-f0-9]{64}$/.test(right)) return false;
+  return timingSafeEqual(Buffer.from(left, "hex"), Buffer.from(right, "hex"));
 }
 
 function bearerToken(request: Request) {
@@ -56,11 +55,32 @@ function bearerToken(request: Request) {
 }
 
 async function readJson(request: Request) {
+  if (!request.headers.get("Content-Type")?.toLowerCase().startsWith("application/json")) {
+    throw json({ error: "Content-Type must be application/json" }, 415);
+  }
   const declared = Number(request.headers.get("Content-Length") ?? 0);
-  if (declared > MAX_BODY_BYTES) throw new Response(null, { status: 413 });
-  const text = await request.text();
-  if (text.length > MAX_BODY_BYTES) throw new Response(null, { status: 413 });
-  return JSON.parse(text) as unknown;
+  if (declared > MAX_BODY_BYTES) throw json({ error: "Request body too large" }, 413);
+  const reader = request.body?.getReader();
+  if (!reader) return JSON.parse("") as unknown;
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    totalBytes += value.byteLength;
+    if (totalBytes > MAX_BODY_BYTES) {
+      await reader.cancel();
+      throw json({ error: "Request body too large" }, 413);
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder().decode(bytes)) as unknown;
 }
 
 type WorkspaceRecord = { authVerifier: string; revision: number; updatedAt: string };
@@ -73,7 +93,9 @@ function historyKey(workspaceId: string, revision: number) { return `${historyPr
 function workspaceRecord(object: R2Object): WorkspaceRecord | null {
   const metadata = object.customMetadata ?? {};
   const revision = Number(metadata.revision);
-  if (!metadata.authVerifier || !Number.isSafeInteger(revision) || revision < 1 || !metadata.updatedAt) return null;
+  if (!metadata.authVerifier || !/^[a-f0-9]{64}$/.test(metadata.authVerifier) ||
+    !Number.isSafeInteger(revision) || revision < 1 || !metadata.updatedAt ||
+    Number.isNaN(Date.parse(metadata.updatedAt))) return null;
   return { authVerifier: metadata.authVerifier, revision, updatedAt: metadata.updatedAt };
 }
 
@@ -91,11 +113,13 @@ async function migrateLegacyWorkspace(env: Env, workspaceId: string, verifier: s
   const history = await env.DB.prepare(
     "SELECT revision, encrypted_state, created_at FROM workspace_history WHERE workspace_id = ? ORDER BY revision DESC LIMIT ?",
   ).bind(workspaceId, HISTORY_LIMIT).all<{ revision: number; encrypted_state: string; created_at: string }>();
-  await Promise.all(history.results.map((snapshot) => env.SYNC_BUCKET.put(
-    historyKey(workspaceId, snapshot.revision),
-    snapshot.encrypted_state,
-    { httpMetadata: { contentType: "application/octet-stream" }, customMetadata: { createdAt: snapshot.created_at } },
-  )));
+  for (const snapshot of history.results) {
+    await env.SYNC_BUCKET.put(
+      historyKey(workspaceId, snapshot.revision),
+      snapshot.encrypted_state,
+      { httpMetadata: { contentType: "application/octet-stream" }, customMetadata: { createdAt: snapshot.created_at } },
+    );
+  }
   const record: WorkspaceRecord = { authVerifier: legacy.auth_verifier, revision: legacy.revision, updatedAt: legacy.updated_at };
   return env.SYNC_BUCKET.put(workspaceKey(workspaceId), legacy.encrypted_state, {
     httpMetadata: { contentType: "application/octet-stream" },
@@ -125,10 +149,9 @@ async function writeHistory(env: Env, workspaceId: string, revision: number, enc
   });
 }
 
-async function pruneHistory(env: Env, workspaceId: string) {
-  const history = await env.SYNC_BUCKET.list({ prefix: historyPrefix(workspaceId), limit: HISTORY_LIMIT + 1 });
-  const stale = history.objects.slice(0, Math.max(0, history.objects.length - HISTORY_LIMIT)).map((object) => object.key);
-  if (stale.length) await env.SYNC_BUCKET.delete(stale);
+async function pruneHistory(env: Env, workspaceId: string, revision: number) {
+  const staleRevision = revision - HISTORY_LIMIT;
+  if (staleRevision > 0) await env.SYNC_BUCKET.delete(historyKey(workspaceId, staleRevision));
 }
 
 async function replaceCurrentWorkspace(env: Env, workspaceId: string, object: R2Object, record: WorkspaceRecord, encryptedState: string) {
@@ -141,8 +164,19 @@ async function replaceCurrentWorkspace(env: Env, workspaceId: string, object: R2
 }
 
 async function handleSync(request: Request, env: Env, workspaceId: string, action?: string) {
-  const rateLimit = await env.SYNC_RATE_LIMITER.limit({ key: workspaceId });
-  if (!rateLimit.success) return json({ error: "Rate limit exceeded" }, 429);
+  const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
+  const [workspaceRateLimit, ipRateLimit] = await Promise.all([
+    env.SYNC_RATE_LIMITER.limit({ key: `sync:${workspaceId}` }),
+    env.SYNC_RATE_LIMITER.limit({ key: `sync-ip:${clientIp}` }),
+  ]);
+  if (!workspaceRateLimit.success || !ipRateLimit.success) return json({ error: "Rate limit exceeded" }, 429);
+  if (request.method !== "GET") {
+    const [workspaceWriteLimit, ipWriteLimit] = await Promise.all([
+      env.WRITE_RATE_LIMITER.limit({ key: `sync-write:${workspaceId}` }),
+      env.WRITE_RATE_LIMITER.limit({ key: `sync-write-ip:${clientIp}` }),
+    ]);
+    if (!workspaceWriteLimit.success || !ipWriteLimit.success) return json({ error: "Write rate limit exceeded" }, 429);
+  }
 
   const token = bearerToken(request);
   if (!token) return json({ error: "Unauthorized" }, 401);
@@ -177,21 +211,21 @@ async function handleSync(request: Request, env: Env, workspaceId: string, actio
     if (!auth.record) {
       if (parsed.revision !== 0) return json({ error: "Not found" }, 404);
       const record: WorkspaceRecord = { authVerifier: auth.verifier, revision: 1, updatedAt: now };
-      await writeHistory(env, workspaceId, record.revision, parsed.encryptedState, now);
       const created = await env.SYNC_BUCKET.put(workspaceKey(workspaceId), parsed.encryptedState, {
         onlyIf: new Headers({ "If-None-Match": "*" }),
         httpMetadata: { contentType: "application/octet-stream" },
         customMetadata: workspaceMetadata(record),
       });
       if (!created) return json({ error: "Revision conflict", revision: 1 }, 409);
+      await writeHistory(env, workspaceId, record.revision, parsed.encryptedState, now);
       return json({ revision: record.revision, updatedAt: now }, 201);
     }
     if (parsed.revision !== auth.record.revision) return json({ error: "Revision conflict", revision: auth.record.revision }, 409);
     const record: WorkspaceRecord = { ...auth.record, revision: auth.record.revision + 1, updatedAt: now };
-    await writeHistory(env, workspaceId, record.revision, parsed.encryptedState, now);
     const updated = await replaceCurrentWorkspace(env, workspaceId, auth.object, record, parsed.encryptedState);
     if (!updated) return json({ error: "Revision conflict", revision: auth.record.revision }, 409);
-    await pruneHistory(env, workspaceId);
+    await writeHistory(env, workspaceId, record.revision, parsed.encryptedState, now);
+    await pruneHistory(env, workspaceId, record.revision);
     return json({ revision: record.revision, updatedAt: now });
   }
 
@@ -209,10 +243,10 @@ async function handleSync(request: Request, env: Env, workspaceId: string, actio
     const encryptedState = await snapshot.text();
     const now = new Date().toISOString();
     const record: WorkspaceRecord = { ...auth.record, revision: auth.record.revision + 1, updatedAt: now };
-    await writeHistory(env, workspaceId, record.revision, encryptedState, now);
     const updated = await replaceCurrentWorkspace(env, workspaceId, auth.object, record, encryptedState);
     if (!updated) return json({ error: "Revision conflict", revision: auth.record.revision }, 409);
-    await pruneHistory(env, workspaceId);
+    await writeHistory(env, workspaceId, record.revision, encryptedState, now);
+    await pruneHistory(env, workspaceId, record.revision);
     return json({ revision: record.revision, updatedAt: now });
   }
 
@@ -226,8 +260,11 @@ async function handleSync(request: Request, env: Env, workspaceId: string, actio
   return json({ error: "Method not allowed" }, 405);
 }
 
-async function handleBoards(request: Request, env: Env, url: URL) {
+async function handleBoards(request: Request, env: Env, url: URL, ctx: ExecutionContext) {
   if (request.method === "GET") {
+    const boardCache = await caches.open("community-boards");
+    const cached = await boardCache.match(request);
+    if (cached) return cached;
     const limit = Math.min(24, Math.max(1, Number(url.searchParams.get("limit")) || 18));
     const before = url.searchParams.get("before");
     if (before && !/^\d{4}-\d{2}-\d{2}T/.test(before)) return json({ error: "Invalid cursor" }, 400);
@@ -240,7 +277,9 @@ async function handleBoards(request: Request, env: Env, url: URL) {
       return { boardId: row.boardId, title: row.title, map: row.map, players: row.players, slots: state.slots, updatedAt: row.updatedAt };
     });
     const nextCursor = boards.length === limit ? boards.at(-1)?.updatedAt ?? null : null;
-    return json({ boards, nextCursor }, 200, "public, max-age=30, stale-while-revalidate=120");
+    const response = json({ boards, nextCursor }, 200, "public, max-age=30, stale-while-revalidate=120");
+    ctx.waitUntil(boardCache.put(request, response.clone()));
+    return response;
   }
 
   if (request.method === "POST") {
@@ -253,8 +292,8 @@ async function handleBoards(request: Request, env: Env, url: URL) {
     const ownerHash = await sha256(parsed.ownerKey);
     const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
     const [ownerRateLimit, ipRateLimit] = await Promise.all([
-      env.SYNC_RATE_LIMITER.limit({ key: `board:${ownerHash}` }),
-      env.SYNC_RATE_LIMITER.limit({ key: `board-ip:${clientIp}` }),
+      env.WRITE_RATE_LIMITER.limit({ key: `board:${ownerHash}` }),
+      env.WRITE_RATE_LIMITER.limit({ key: `board-ip:${clientIp}` }),
     ]);
     if (!ownerRateLimit.success || !ipRateLimit.success) return json({ error: "Rate limit exceeded" }, 429);
     const existing = await env.DB.prepare("SELECT board_id FROM community_boards WHERE owner_hash = ?").bind(ownerHash).first<{ board_id: string }>();
@@ -268,7 +307,6 @@ async function handleBoards(request: Request, env: Env, url: URL) {
       await env.DB.prepare("INSERT INTO community_boards (board_id, owner_hash, title, map, players, state_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(boardId, ownerHash, parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, now).run();
     }
-    await env.DB.prepare("DELETE FROM community_boards WHERE updated_at < datetime('now', '-90 days')").run();
     return json({ boardId, updatedAt: now }, existing ? 200 : 201);
   }
 
@@ -276,11 +314,11 @@ async function handleBoards(request: Request, env: Env, url: URL) {
 }
 
 export default {
-  async fetch(request, env): Promise<Response> {
+  async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return json({ ok: true, service: "fluz-ld-tools" });
     if (url.pathname === "/api/boards") {
-      try { return await handleBoards(request, env, url); }
+      try { return await handleBoards(request, env, url, ctx); }
       catch (error) {
         console.error(JSON.stringify({ event: "boards_error", error: error instanceof Error ? error.message : "unknown" }));
         return json({ error: "Internal error" }, 500);
@@ -289,10 +327,13 @@ export default {
     const match = workspacePattern.exec(url.pathname);
     if (!match) return json({ error: "Not found" }, 404);
     try {
-      return await handleSync(request, env, match[1], match[2]);
+      return await handleSync(request, env, match[1].toLowerCase(), match[2]);
     } catch (error) {
       console.error(JSON.stringify({ event: "sync_error", path: url.pathname, error: error instanceof Error ? error.message : "unknown" }));
       return json({ error: "Internal error" }, 500);
     }
+  },
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(env.DB.prepare("DELETE FROM community_boards WHERE updated_at < datetime('now', '-90 days')").run());
   },
 } satisfies ExportedHandler<Env>;

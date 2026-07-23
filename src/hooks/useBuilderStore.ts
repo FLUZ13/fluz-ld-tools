@@ -44,6 +44,7 @@ export function useBuilderStore() {
       const [saved, storedWorkspace] = await Promise.all([loadState(), loadWorkspace()]);
       let nextWorkspace = storedWorkspace ?? createAnonymousWorkspace();
       let nextState = saved?.state ?? createDefaultState();
+      let shouldSyncInitialState = Boolean(saved && !storedWorkspace);
       const hashCode = window.location.hash.startsWith("#sync=") ? window.location.hash : "";
       if (hashCode) {
         try {
@@ -51,9 +52,10 @@ export function useBuilderStore() {
           const remote = await getRemoteState(nextWorkspace);
           nextWorkspace.revision = remote.revision;
           nextState = await decryptState(remote.encryptedState, nextWorkspace);
-          lastSyncedFingerprint.current = stateFingerprint(nextState);
+          shouldSyncInitialState = false;
           window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
         } catch {
+          shouldSyncInitialState = false;
           setSyncStatus("offline");
         }
       } else if (storedWorkspace) {
@@ -63,16 +65,19 @@ export function useBuilderStore() {
           const cloudState = await decryptState(remote.encryptedState, storedWorkspace);
           const cloudFingerprint = stateFingerprint(cloudState);
           const localFingerprint = stateFingerprint(nextState);
-          if (!saved || cloudState.updatedAt > nextState.updatedAt) nextState = cloudState;
-          if (cloudFingerprint === localFingerprint || nextState === cloudState) {
-            lastSyncedFingerprint.current = stateFingerprint(nextState);
+          const useCloudState = !saved || cloudState.updatedAt > nextState.updatedAt;
+          if (useCloudState) nextState = cloudState;
+          shouldSyncInitialState = !useCloudState && cloudFingerprint !== localFingerprint;
+          if (!shouldSyncInitialState) {
             setSyncStatus("saved");
           }
         } catch {
+          shouldSyncInitialState = false;
           setSyncStatus("offline");
         }
       }
       nextState = migrateBuilderState(nextState);
+      if (!shouldSyncInitialState) lastSyncedFingerprint.current = stateFingerprint(nextState);
       await Promise.all([saveWorkspace(nextWorkspace), saveState(nextState)]);
       if (!active) return;
       stateRef.current = nextState;
@@ -138,7 +143,7 @@ export function useBuilderStore() {
         }
         setSyncStatus("offline");
       });
-    }, 1200);
+    }, 2000);
     return () => window.clearTimeout(timer);
   }, [conflict, loaded, state, workspace]);
 

@@ -104,21 +104,21 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .tier-1 { color: #796f5c; } .tier-2 { color: #2e79a7; } .tier-3 { color: #7143a7; } .tier-4 { color: #c18418; } .tier-5 { color: #d35c2e; } .tier-6 { color: #b8343f; } .tier-7 { color: #0b94ae; }
 .backup-message { min-height: 27px; display: flex; align-items: center; padding: 4px 12px; color: #315e50; background: #d6dfca; border-bottom: 1px solid #a3b697; font-size: 11px; font-weight: 900; }
 
-.roster-grid { height: calc(100vh - 164px); overflow: auto; display: grid; grid-template-columns: repeat(4, minmax(76px, 1fr)); align-content: start; gap: 6px; padding: 7px; background: #d7c5aa; }
+.roster-grid { height: calc(100vh - 164px); overflow: auto; display: grid; grid-template-columns: repeat(3, minmax(100px, 1fr)); align-content: start; gap: 8px; padding: 9px; background: #d7c5aa; }
 .immortal-card { min-width: 0; position: relative; }
-.immortal-toggle { width: 100%; min-width: 0; min-height: 88px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; padding: 5px 3px 4px; border: 2px solid #9f8769; border-radius: 6px; color: #4e4034; background: #ebdcc3; }
+.immortal-toggle { width: 100%; min-width: 0; min-height: 106px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 3px; padding: 7px 4px 5px; border: 2px solid #9f8769; border-radius: 6px; color: #4e4034; background: #ebdcc3; }
 .immortal-toggle:hover { border-color: #6a5542; }
 .immortal-toggle.selected { border-color: #1d8d84; background: #d4e1ce; box-shadow: inset 0 -4px 0 #1d8d84; }
 .immortal-card.favorite .immortal-toggle { box-shadow: inset 0 -4px 0 #1d8d84, inset 0 0 0 1px rgba(214, 148, 25, .5); }
-.favorite-immortal { width: 23px; height: 23px; position: absolute; top: 3px; right: 3px; z-index: 2; display: grid; place-items: center; padding: 0; border: 1px solid rgba(109, 80, 46, .32); border-radius: 50%; color: #8b765e; background: rgba(255, 248, 230, .82); box-shadow: 0 1px 1px rgba(53,43,34,.16); }
+.favorite-immortal { width: 25px; height: 25px; position: absolute; top: 4px; right: 4px; z-index: 2; display: grid; place-items: center; padding: 0; border: 1px solid rgba(109, 80, 46, .32); border-radius: 50%; color: #8b765e; background: rgba(255, 248, 230, .82); box-shadow: 0 1px 1px rgba(53,43,34,.16); }
 .favorite-immortal:hover { color: #c68011; border-color: #c68011; background: #fff4c9; }
 .favorite-immortal.active { color: #c68011; border-color: #c68011; background: #fff0b4; }
 .favorite-immortal svg { width: 15px; height: 15px; }
 .favorite-immortal.active svg { fill: currentColor; }
-.portrait-wrap { width: 47px; height: 47px; position: relative; display: grid; place-items: center; }
-.portrait-wrap img { max-width: 47px; max-height: 47px; object-fit: contain; filter: drop-shadow(0 2px 1px rgba(53,43,34,.3)); }
-.selected-mark { position: absolute; right: -5px; bottom: -3px; width: 17px; height: 17px; padding: 2px; color: #fff; background: #188b78; border: 2px solid #f5ead6; border-radius: 50%; }
-.immortal-toggle > span:nth-child(2) { width: 100%; min-height: 22px; display: grid; place-items: center; overflow-wrap: anywhere; font-size: 9px; font-weight: 900; line-height: 1.15; }
+.portrait-wrap { width: 56px; height: 56px; position: relative; display: grid; place-items: center; }
+.portrait-wrap img { max-width: 56px; max-height: 56px; object-fit: contain; filter: drop-shadow(0 2px 1px rgba(53,43,34,.3)); }
+.selected-mark { position: absolute; right: -4px; bottom: -3px; width: 19px; height: 19px; padding: 2px; color: #fff; background: #188b78; border: 2px solid #f5ead6; border-radius: 50%; }
+.immortal-toggle > span:nth-child(2) { width: 100%; min-height: 25px; display: grid; place-items: center; overflow-wrap: anywhere; font-size: 10px; font-weight: 900; line-height: 1.15; }
 .immortal-toggle small { color: #a94a38; font-size: 8px; font-weight: 900; text-transform: uppercase; }
 
 .results-section { background: #cdb99c; }
@@ -382,7 +382,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 
 @media (max-width: 1220px) {
   .builder-layout { grid-template-columns: minmax(560px, .85fr) minmax(330px, .56fr) minmax(430px, .95fr); }
-  .roster-grid { grid-template-columns: repeat(4, minmax(72px, 1fr)); }
+  .roster-grid { grid-template-columns: repeat(3, minmax(96px, 1fr)); }
   .board-toolbar-actions { width: 100%; margin-left: 0; overflow-x: auto; }
   .board-workspace { grid-template-columns: 260px minmax(500px, 1fr); }
   .saved-boards-panel { grid-column: 1 / 3; border-top: 1px solid #80664d; border-left: 0; }
@@ -412,7 +412,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .builder-layout > .inventory-column.mobile-inventory, .builder-layout > .roster-column.mobile-roster, .builder-layout > .results-column.mobile-results { display: block; }
   .work-section { min-height: calc(100vh - 145px); }
   .rune-list, .roster-grid, .results-list { height: calc(100vh - 247px); }
-  .roster-grid { grid-template-columns: repeat(4, minmax(78px, 1fr)); }
+  .roster-grid { grid-template-columns: repeat(3, minmax(86px, 1fr)); }
   .results-list { grid-template-columns: 1fr; }
   footer { padding-bottom: 60px; }
   .reference-header-copy { display: none; }
@@ -451,7 +451,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .rune-list { overflow: auto; }
   .rune-row { padding-left: 7px; padding-right: 7px; }
   .roster-grid { grid-template-columns: repeat(3, minmax(76px, 1fr)); padding: 8px; }
-  .immortal-toggle { min-height: 88px; }
+  .immortal-toggle { min-height: 100px; }
   .results-list { padding: 8px; }
   .modal-backdrop { padding: 8px; }
   .modal-body { padding: 13px; }

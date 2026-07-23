@@ -12,9 +12,13 @@ interface VariableMeta {
 const variableName = (runeIndex: number, tier: RuneTier, immortalIndex: number) =>
   `r${runeIndex}t${tier}i${immortalIndex}`;
 
+// This sits below rune tier priority and vastly below a one-point meta rating change.
+const FAVORITE_TIE_BREAKER = 1_000;
+
 export function optimizeAssignments(state: BuilderState): Recommendation[] {
   const ratings = ratingsFor(state.metaVersion);
   const selected = new Set(state.selectedImmortalIds);
+  const favorites = new Set(state.favoriteImmortalIds);
   const remainingInventory = new Map<string, number>();
   const occupiedSlots = new Map<string, number>();
   const lockedRuneTypes = new Set<string>();
@@ -66,7 +70,7 @@ export function optimizeAssignments(state: BuilderState): Recommendation[] {
         const name = variableName(runeIndex, tier, immortalIndex);
         const stableTieBreaker = DATA.runes.length - runeIndex + DATA.immortals.length - immortalIndex;
         variables[name] = {
-          value: score * 100_000_000 + tier * 100_000 + stableTieBreaker,
+          value: score * 100_000_000 + tier * 100_000 + (favorites.has(immortal.id) ? FAVORITE_TIE_BREAKER : 0) + stableTieBreaker,
           [copyConstraint]: 1,
           [`slots:${immortal.id}`]: 1,
           [`same:${immortal.id}:${rune.id}`]: 1,

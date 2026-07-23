@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultState, type BuilderState } from "../model";
+import { DATA, createDefaultState, ratingsFor, type BuilderState } from "../model";
 import { optimizeAssignments } from "./optimizer";
 
 const owned = (inventory: BuilderState["inventory"], runeId: string, tier: 1 | 2 | 3 | 4 | 5 | 6 | 7, count = 1) => {
@@ -48,5 +48,39 @@ describe("optimizer", () => {
   it("returns no assignments for an empty inventory", () => {
     const state = createDefaultState();
     expect(optimizeAssignments(state).every((result) => result.assignments.length === 0)).toBe(true);
+  });
+
+  it("uses favorites only to break otherwise equal recommendations", () => {
+    const state = createDefaultState();
+    const rating = ratingsFor(state.metaVersion).strength;
+    const candidates = DATA.immortals.filter((immortal) => (rating[immortal.id]?.pve ?? 0) > 0);
+    const favorite = candidates.find((immortal, index) => candidates.slice(0, index).some((other) => rating[other.id]?.pve === rating[immortal.id]?.pve));
+    expect(favorite).toBeDefined();
+    const other = candidates.find((immortal) => immortal.id !== favorite!.id && rating[immortal.id]?.pve === rating[favorite!.id]?.pve);
+    expect(other).toBeDefined();
+    state.selectedImmortalIds = [other!.id, favorite!.id];
+    state.favoriteImmortalIds = [favorite!.id];
+    owned(state.inventory, "strength", 7);
+
+    const assigned = optimizeAssignments(state).flatMap((result) => result.assignments);
+    expect(assigned).toContainEqual(expect.objectContaining({ immortalId: favorite!.id, runeId: "strength", tier: 7 }));
+  });
+
+  it("does not let a favorite override a higher recommendation score", () => {
+    const state = createDefaultState();
+    const rating = ratingsFor(state.metaVersion).strength;
+    const candidates = DATA.immortals
+      .map((immortal) => ({ immortal, score: rating[immortal.id]?.pve ?? 0 }))
+      .filter((candidate) => candidate.score > 0)
+      .sort((left, right) => left.score - right.score);
+    const favorite = candidates[0];
+    const stronger = candidates.at(-1);
+    expect(stronger?.score).toBeGreaterThan(favorite?.score ?? 0);
+    state.selectedImmortalIds = [favorite.immortal.id, stronger!.immortal.id];
+    state.favoriteImmortalIds = [favorite.immortal.id];
+    owned(state.inventory, "strength", 7);
+
+    const assigned = optimizeAssignments(state).flatMap((result) => result.assignments);
+    expect(assigned).toContainEqual(expect.objectContaining({ immortalId: stronger!.immortal.id, runeId: "strength", tier: 7 }));
   });
 });

@@ -37,6 +37,7 @@ export interface BuilderState {
   schemaVersion: 1;
   inventory: Record<string, Partial<Record<RuneTier, number>>>;
   selectedImmortalIds: string[];
+  favoriteImmortalIds: string[];
   mode: GameMode;
   metaVersion: MetaVersion;
   lockedAssignments: LockedAssignment[];
@@ -93,6 +94,7 @@ export const createDefaultState = (): BuilderState => ({
   schemaVersion: 1,
   inventory: {},
   selectedImmortalIds: DATA.immortals.map((immortal) => immortal.id),
+  favoriteImmortalIds: [],
   mode: "pve",
   metaVersion: "1.1",
   lockedAssignments: [],
@@ -107,7 +109,11 @@ export const countOwnedRunes = (state: BuilderState) =>
 
 export function migrateBuilderState(state: BuilderState): BuilderState {
   // Existing anonymous workspaces keep the recommendation snapshot they had.
-  const versioned = { ...state, metaVersion: state.metaVersion === "1.1" ? "1.1" : "1.0" as MetaVersion };
+  const immortalIds = new Set(DATA.immortals.map((immortal) => immortal.id));
+  const favoriteImmortalIds = Array.isArray(state.favoriteImmortalIds)
+    ? [...new Set(state.favoriteImmortalIds.filter((id) => immortalIds.has(id)))]
+    : [];
+  const versioned = { ...state, favoriteImmortalIds, metaVersion: state.metaVersion === "1.1" ? "1.1" : "1.0" as MetaVersion };
   const addedFormId = "ace-bat-man-batter";
   if (versioned.selectedImmortalIds.includes(addedFormId)) return versioned;
   const previousRoster = DATA.immortals.filter((immortal) => immortal.id !== addedFormId);

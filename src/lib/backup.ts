@@ -48,6 +48,9 @@ export function parseBackup(text: string): BuilderState {
   const selectedImmortalIds = Array.isArray(raw.selectedImmortalIds)
     ? raw.selectedImmortalIds.filter((id: unknown): id is string => typeof id === "string" && immortalIds.has(id))
     : DATA.immortals.map((immortal) => immortal.id);
+  const favoriteImmortalIds = Array.isArray(raw.favoriteImmortalIds)
+    ? [...new Set(raw.favoriteImmortalIds.filter((id: unknown): id is string => typeof id === "string" && immortalIds.has(id)))]
+    : [];
   const mode = modes.has(raw.mode as GameMode) ? raw.mode as GameMode : "pve";
   const metaVersion: MetaVersion = raw.metaVersion === "1.1" ? "1.1" : "1.0";
   const lockedAssignments: BuilderState["lockedAssignments"] = [];
@@ -66,6 +69,7 @@ export function parseBackup(text: string): BuilderState {
     schemaVersion: 1,
     inventory,
     selectedImmortalIds,
+    favoriteImmortalIds,
     mode,
     metaVersion,
     lockedAssignments,

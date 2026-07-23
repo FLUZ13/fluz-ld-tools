@@ -105,9 +105,16 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .backup-message { min-height: 27px; display: flex; align-items: center; padding: 4px 12px; color: #315e50; background: #d6dfca; border-bottom: 1px solid #a3b697; font-size: 11px; font-weight: 900; }
 
 .roster-grid { height: calc(100vh - 164px); overflow: auto; display: grid; grid-template-columns: repeat(3, minmax(84px, 1fr)); align-content: start; gap: 7px; padding: 10px; background: #d7c5aa; }
+.immortal-card { min-width: 0; position: relative; }
 .immortal-toggle { min-width: 0; min-height: 112px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; padding: 7px 4px 5px; border: 2px solid #9f8769; border-radius: 6px; color: #4e4034; background: #ebdcc3; }
 .immortal-toggle:hover { border-color: #6a5542; }
 .immortal-toggle.selected { border-color: #1d8d84; background: #d4e1ce; box-shadow: inset 0 -4px 0 #1d8d84; }
+.immortal-card.favorite .immortal-toggle { box-shadow: inset 0 -4px 0 #1d8d84, inset 0 0 0 1px rgba(214, 148, 25, .5); }
+.favorite-immortal { width: 25px; height: 25px; position: absolute; top: 4px; right: 4px; z-index: 2; display: grid; place-items: center; padding: 0; border: 1px solid rgba(109, 80, 46, .32); border-radius: 50%; color: #8b765e; background: rgba(255, 248, 230, .82); box-shadow: 0 1px 1px rgba(53,43,34,.16); }
+.favorite-immortal:hover { color: #c68011; border-color: #c68011; background: #fff4c9; }
+.favorite-immortal.active { color: #c68011; border-color: #c68011; background: #fff0b4; }
+.favorite-immortal svg { width: 15px; height: 15px; }
+.favorite-immortal.active svg { fill: currentColor; }
 .portrait-wrap { width: 64px; height: 64px; position: relative; display: grid; place-items: center; }
 .portrait-wrap img { max-width: 64px; max-height: 64px; object-fit: contain; filter: drop-shadow(0 2px 1px rgba(53,43,34,.3)); }
 .selected-mark { position: absolute; right: -3px; bottom: -2px; width: 20px; height: 20px; padding: 3px; color: #fff; background: #188b78; border: 2px solid #f5ead6; border-radius: 50%; }

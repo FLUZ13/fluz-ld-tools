@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decodeSharedBoard, encodeSharedBoard } from "./export";
-import { BOARD_GUARDIANS, BOARD_MAPS, createBoardState, isBoardState, migrateBoardState, slotsForMap } from "./model";
+import { BOARD_GUARDIAN_BY_ID, BOARD_GUARDIANS, BOARD_MAPS, createBoardState, isBoardState, migrateBoardState, slotsForMap } from "./model";
 
 describe("board model", () => {
   it("contains every requested map and guardian rarity", () => {
@@ -9,6 +9,16 @@ describe("board model", () => {
     expect(new Set(BOARD_GUARDIANS.map((guardian) => guardian.rarity))).toEqual(
       new Set(["common", "rare", "epic", "legendary", "mythic", "immortal"]),
     );
+  });
+
+  it("uses the verified name-to-portrait aliases", () => {
+    expect(BOARD_GUARDIAN_BY_ID.get("1002")?.image).toBe("/assets/board/guardians/1005.png");
+    expect(BOARD_GUARDIAN_BY_ID.get("1003")?.image).toBe("/assets/board/guardians/1002.png");
+    expect(BOARD_GUARDIAN_BY_ID.get("1005")?.image).toBe("/assets/board/guardians/1003.png");
+    expect(BOARD_GUARDIAN_BY_ID.get("5004")?.image).toBe("/assets/board/guardians/5006.png");
+    expect(BOARD_GUARDIAN_BY_ID.get("5006")?.image).toBe("/assets/board/guardians/5004.png");
+    expect(BOARD_GUARDIAN_BY_ID.get("13004")?.image).toBe("/assets/board/guardians/13004-verified.png");
+    expect(BOARD_GUARDIAN_BY_ID.get("15010")?.image).toBe("/assets/board/guardians/15010-verified.png");
   });
 
   it("validates the selected map's slot count", () => {

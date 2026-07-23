@@ -30,6 +30,11 @@ describe("game data snapshot", () => {
     expect(DATA.immortals.find((immortal) => immortal.id === "great-kitty-mage")?.image).toBe("/assets/immortals/1400601.png");
     expect(DATA.immortals.find((immortal) => immortal.id === "colony-tar")?.image).toBe("/assets/immortals/1501401.png");
     expect(DATA.immortals.find((immortal) => immortal.id === "evergreen-verdee")?.image).toBe("/assets/immortals/1501901.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "super-graviton")?.image).toBe("/assets/immortals/13004-verified.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "ace-bat-man")?.image).toBe("/assets/immortals/15010-verified.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "ace-bat-man-batter")?.image).toBe("/assets/immortals/15010-verified.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "sage-kun")?.image).toBe("/assets/immortals/15018.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "azure-dragon-taoist")?.image).toBe("/assets/immortals/15016.png");
   });
 
   it("has valid three-mode ratings for every rune and Immortal in both meta versions", () => {

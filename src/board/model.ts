@@ -49,9 +49,9 @@ export const BOARD_MAPS: BoardMap[] = [
   { id: "extreme", name: "Extreme", image: "/assets/board/maps/extreme.png", columns: 6, rows: 5 },
 ];
 
-const baseGuardians: Array<[string, string, GuardianRarity]> = [
-  ["1001", "Archer", "common"], ["1002", "Bandit", "common"], ["1003", "Thrower", "common"],
-  ["1004", "Water Element", "common"], ["1005", "Barbarian", "common"],
+const baseGuardians: Array<[string, string, GuardianRarity, string?]> = [
+  ["1001", "Archer", "common"], ["1002", "Bandit", "common", "1005"], ["1003", "Thrower", "common", "1002"],
+  ["1004", "Water Element", "common"], ["1005", "Barbarian", "common", "1003"],
   ["2001", "Ranger", "rare"], ["2002", "Shock Robot", "rare"], ["2003", "Paladin", "rare"],
   ["2004", "Sandman", "rare"], ["2005", "Demon Soldier", "rare"],
   ["3001", "Electro Robot", "epic"], ["3002", "Tree", "epic"], ["3003", "Hunter", "epic"],
@@ -60,8 +60,8 @@ const baseGuardians: Array<[string, string, GuardianRarity]> = [
   ["4005", "Storm Giant", "legendary"], ["4007", "Sheriff", "legendary"],
   ["3004", "Graviton", "mythic"], ["3007", "Ninja", "mythic"], ["4001", "Orc Shaman", "mythic"],
   ["4002", "Pulse Generator", "mythic"], ["4006", "Kitty Mage", "mythic"], ["5001", "Bomba", "mythic"],
-  ["5002", "Coldy", "mythic"], ["5003", "Lancelot", "mythic"], ["5004", "Dragon", "mythic"],
-  ["5005", "Blob", "mythic"], ["5006", "Iron Meow", "mythic"], ["5007", "Monopoly Man", "mythic"],
+  ["5002", "Coldy", "mythic"], ["5003", "Lancelot", "mythic"], ["5004", "Dragon", "mythic", "5006"],
+  ["5005", "Blob", "mythic"], ["5006", "Iron Meow", "mythic", "5004"], ["5007", "Monopoly Man", "mythic"],
   ["5008", "Mama", "mythic"], ["5009", "Frog Prince", "mythic"], ["5010", "Batman", "mythic"],
   ["5011", "Vayne", "mythic"], ["5012", "Indy", "mythic"], ["5013", "Watt", "mythic"],
   ["5014", "Tar", "mythic"], ["5015", "Rocket Chu", "mythic"], ["5016", "Lazy Taoist", "mythic"],
@@ -72,7 +72,12 @@ const baseGuardians: Array<[string, string, GuardianRarity]> = [
 ];
 
 export const BOARD_GUARDIANS: BoardGuardian[] = [
-  ...baseGuardians.map(([id, name, rarity]) => ({ id, name, rarity, image: `/assets/board/guardians/${id}.png` })),
+  ...baseGuardians.map(([id, name, rarity, imageId = id]) => ({
+    id,
+    name,
+    rarity,
+    image: `/assets/board/guardians/${imageId}.png`,
+  })),
   ...DATA.immortals.map((guardian) => ({
     id: guardian.assetId,
     name: guardian.name,

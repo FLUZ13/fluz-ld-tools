@@ -1117,8 +1117,8 @@
       "name": "Super Graviton",
       "assetId": "13004",
       "role": "support",
-      "image": "/assets/immortals/13004.png",
-      "boardImage": "/assets/board/guardians/13004.png",
+      "image": "/assets/immortals/13004-verified.png",
+      "boardImage": "/assets/board/guardians/13004-verified.png",
       "provisional": false
     },
     {
@@ -1225,8 +1225,8 @@
       "name": "Ace Bat Man: Pitcher",
       "assetId": "15010",
       "role": "physical",
-      "image": "/assets/immortals/15010.png",
-      "boardImage": "/assets/board/guardians/15010.png",
+      "image": "/assets/immortals/15010-verified.png",
+      "boardImage": "/assets/board/guardians/15010-verified.png",
       "provisional": false
     },
     {
@@ -1234,8 +1234,8 @@
       "name": "Ace Bat Man: Batter",
       "assetId": "15010-batter",
       "role": "physical",
-      "image": "/assets/immortals/15010-batter.png",
-      "boardImage": "/assets/board/guardians/15010-batter.png",
+      "image": "/assets/immortals/15010-verified.png",
+      "boardImage": "/assets/board/guardians/15010-verified.png",
       "provisional": false
     },
     {
@@ -1261,8 +1261,8 @@
       "name": "Sage Kun",
       "assetId": "15016",
       "role": "magic",
-      "image": "/assets/immortals/15016.png",
-      "boardImage": "/assets/board/guardians/15016.png",
+      "image": "/assets/immortals/15018.png",
+      "boardImage": "/assets/board/guardians/15018.png",
       "provisional": false
     },
     {
@@ -1279,8 +1279,8 @@
       "name": "Azure Dragon Taoist",
       "assetId": "15018",
       "role": "magic",
-      "image": "/assets/immortals/15018.png",
-      "boardImage": "/assets/board/guardians/15018.png",
+      "image": "/assets/immortals/15016.png",
+      "boardImage": "/assets/board/guardians/15016.png",
       "provisional": false
     },
     {

@@ -58,11 +58,11 @@ export function Results({ state, recommendations }: ResultsProps) {
                         <img src={rune.image} alt="" />
                         <div className="assignment-copy"><strong>{rune.name.replace("Rune of ", "")}</strong><span className={`tier-label tier-${assignment.tier}`}>{TIER_NAMES[assignment.tier]}</span><FitMeter score={assignment.score} /></div>
                         {assignment.confidence === "provisional" && <span className="provisional-dot" title="Provisional rating">P</span>}
-                        {slot === 0 && <details className="rune-alternatives"><summary>Alternative runes</summary>{alternatives.length > 0 ? <ul>{alternatives.map((alternative) => <li key={alternative.rune.id}><img src={alternative.rune.image} alt="" /><span>{alternative.rune.name.replace("Rune of ", "")}</span><em className={`tier-label tier-${alternative.tier}`}>{TIER_NAMES[alternative.tier]}</em><FitMeter score={alternative.score} /></li>)}</ul> : <p>No other owned runes have a Good rating or higher.</p>}</details>}
                       </div>
                     );
                   })}
                 </div>
+                <details className="rune-alternatives"><summary>Alternative runes</summary>{alternatives.length > 0 ? <ul>{alternatives.map((alternative) => <li key={alternative.rune.id}><img src={alternative.rune.image} alt="" /><span>{alternative.rune.name.replace("Rune of ", "")}</span><em className={`tier-label tier-${alternative.tier}`}>{TIER_NAMES[alternative.tier]}</em><FitMeter score={alternative.score} /></li>)}</ul> : <p>No other owned runes have a Good rating or higher.</p>}</details>
               </article>
             );
           })}

@@ -1,11 +1,12 @@
 import { Check, Copy, Eraser, FileDown, FileUp, ImageDown, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users, ZoomOut } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { publishBoard } from "../board/api";
 import { decodeSharedBoard, downloadBlob, encodeSharedBoard, renderBoardPng } from "../board/export";
 import { BOARD_GUARDIANS, BOARD_MAPS, createBoardState, getBoardMap, migrateBoardState, type BoardState, type GuardianRarity } from "../board/model";
 import { deleteBoardSnapshot, listBoardSnapshots, loadBoardDraft, saveBoardDraft, saveBoardSnapshot } from "../board/storage";
 
 type GuardianFilter = GuardianRarity | "all" | "basic";
+type BoardSlot = { player: number; slot: number };
 
 const rarities: Array<{ id: GuardianFilter; label: string }> = [
   { id: "all", label: "All" }, { id: "basic", label: "Basic Guardians" },
@@ -36,6 +37,8 @@ export function BoardBuilder() {
   const [past, setPast] = useState<BoardState[]>([]);
   const [future, setFuture] = useState<BoardState[]>([]);
   const [boardZoom, setBoardZoom] = useState(loadBoardZoom);
+  const [draggedSlot, setDraggedSlot] = useState<BoardSlot | null>(null);
+  const [dropTarget, setDropTarget] = useState<BoardSlot | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const receivedRemoteUpdate = useRef(false);
@@ -119,6 +122,25 @@ export function BoardBuilder() {
     updateBoard((draft) => { draft.slots[player][slot] = guardianId; });
   };
 
+  const moveGuardian = (source: BoardSlot, target: BoardSlot) => {
+    if (source.player === target.player && source.slot === target.slot) return;
+    updateBoard((draft) => {
+      const sourceGuardian = draft.slots[source.player][source.slot];
+      const targetGuardian = draft.slots[target.player][target.slot];
+      draft.slots[target.player][target.slot] = sourceGuardian;
+      draft.slots[source.player][source.slot] = targetGuardian;
+    });
+  };
+
+  const readDraggedSlot = (event: DragEvent) => {
+    try {
+      const payload = event.dataTransfer.getData("application/x-ld-board-slot") || event.dataTransfer.getData("text/plain");
+      const value = JSON.parse(payload.replace("ld-board-slot:", "")) as BoardSlot;
+      if (Number.isInteger(value.player) && Number.isInteger(value.slot) && value.player >= 0 && value.player < 2 && value.slot >= 0 && value.slot < 18) return value;
+    } catch { /* A guardian-library drag has no board-slot payload. */ }
+    return null;
+  };
+
   const exportFile = () => {
     downloadBlob(new Blob([JSON.stringify(board, null, 2)], { type: "application/json" }), `${fileSlug(board.title)}.ldboard.json`);
     setNotice("Board file saved.");
@@ -189,7 +211,7 @@ export function BoardBuilder() {
           <header><div><h2>Guardians</h2><span>{filteredGuardians.length} available</span></div><button className={`icon-button quiet ${selectedGuardian === null ? "selected" : ""}`} onClick={() => setSelectedGuardian(null)} title="Erase a slot" aria-label="Erase a slot"><Eraser /></button></header>
           <label className="search-field"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search guardians" /></label>
           <div className="rarity-tabs">{rarities.map((item) => <button key={item.id} className={rarity === item.id ? "active" : ""} onClick={() => setRarity(item.id)}>{item.label}</button>)}</div>
-          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`${selectedGuardian === guardian.id ? "selected" : ""} rarity-${guardian.rarity}`} onDragStart={(event) => event.dataTransfer.setData("text/guardian-id", guardian.id)} onClick={() => setSelectedGuardian(guardian.id)} title={guardian.name}><img src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
+          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`${selectedGuardian === guardian.id ? "selected" : ""} rarity-${guardian.rarity}`} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("text/guardian-id", guardian.id); }} onClick={() => setSelectedGuardian(guardian.id)} title={guardian.name}><img src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
         </section>
 
         <section className="board-stage" aria-label="Board canvas">
@@ -200,7 +222,38 @@ export function BoardBuilder() {
                 <span className="interactive-player-label">Player {player + 1}</span>
                 <div className="interactive-grid">{slots.map((guardianId, slot) => {
                   const guardian = guardianId ? BOARD_GUARDIANS.find((item) => item.id === guardianId) : undefined;
-                  return <button key={slot} className={guardian ? `filled rarity-${guardian.rarity}` : ""} onClick={() => placeGuardian(player, slot)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); placeGuardian(player, slot, event.dataTransfer.getData("text/guardian-id") || null); }} title={guardian ? `${guardian.name}. Click to replace or erase.` : `Empty slot ${slot + 1}`}><span>{slot + 1}</span>{guardian && <img src={guardian.image} alt={guardian.name} />}</button>;
+                  const isDragSource = draggedSlot?.player === player && draggedSlot.slot === slot;
+                  const isDropTarget = dropTarget?.player === player && dropTarget.slot === slot;
+                  return <button
+                    key={slot}
+                    draggable={Boolean(guardian)}
+                    className={`${guardian ? `filled rarity-${guardian.rarity}` : ""} ${isDragSource ? "drag-source" : ""} ${isDropTarget ? "drop-target" : ""}`}
+                    onClick={() => placeGuardian(player, slot)}
+                    onDragStart={(event) => {
+                      if (!guardian) return;
+                      const source = { player, slot };
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("application/x-ld-board-slot", JSON.stringify(source));
+                      event.dataTransfer.setData("text/plain", `ld-board-slot:${JSON.stringify(source)}`);
+                      setDraggedSlot(source);
+                    }}
+                    onDragEnd={() => { setDraggedSlot(null); setDropTarget(null); }}
+                    onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = draggedSlot ? "move" : "copy"; setDropTarget({ player, slot }); }}
+                    onDragLeave={() => setDropTarget((current) => current?.player === player && current.slot === slot ? null : current)}
+                    onDrop={(event) => {
+                      event.preventDefault();
+                      const source = readDraggedSlot(event);
+                      if (source) moveGuardian(source, { player, slot });
+                      else {
+                        const guardianId = event.dataTransfer.getData("text/guardian-id");
+                        if (guardianId && BOARD_GUARDIANS.some((item) => item.id === guardianId)) placeGuardian(player, slot, guardianId);
+                      }
+                      setDraggedSlot(null);
+                      setDropTarget(null);
+                    }}
+                    title={guardian ? `${guardian.name}. Drag to move, or click to replace or erase.` : `Empty slot ${slot + 1}`}>
+                    <span>{slot + 1}</span>{guardian && <img src={guardian.image} alt={guardian.name} />}
+                  </button>;
                 })}</div>
               </div>
             ))}

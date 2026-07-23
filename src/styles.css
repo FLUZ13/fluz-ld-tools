@@ -300,6 +300,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .interactive-grid button { aspect-ratio: 1; min-width: 0; position: relative; display: grid; place-items: center; padding: 3px; overflow: hidden; border: 2px solid rgba(91,70,53,.6); border-radius: 5px; color: rgba(84,64,49,.55); background: rgba(247,236,217,.7); }
 .interactive-grid button:hover { border-color: #15989a; background: #f8edd9; }
 .interactive-grid button.filled { border-color: var(--rarity); border-bottom-width: 5px; background: #f2dfc0; }
+.interactive-grid button.filled { cursor: grab; }
+.interactive-grid button.drag-source { opacity: .45; cursor: grabbing; }
+.interactive-grid button.drop-target { border-color: #15989a; box-shadow: inset 0 0 0 2px rgba(21, 152, 154, .35); }
 .interactive-grid button > span { position: absolute; top: 2px; left: 4px; font-size: 8px; opacity: .5; }
 .interactive-grid img { width: 90%; height: 90%; object-fit: contain; filter: drop-shadow(0 2px 1px rgba(53,43,34,.3)); }
 .saved-empty { padding: 34px 18px; color: #806c56; text-align: center; font-size: 11px; }

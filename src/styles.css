@@ -106,7 +106,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 
 .roster-grid { height: calc(100vh - 164px); overflow: auto; display: grid; grid-template-columns: repeat(3, minmax(84px, 1fr)); align-content: start; gap: 7px; padding: 10px; background: #d7c5aa; }
 .immortal-card { min-width: 0; position: relative; }
-.immortal-toggle { min-width: 0; min-height: 112px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; padding: 7px 4px 5px; border: 2px solid #9f8769; border-radius: 6px; color: #4e4034; background: #ebdcc3; }
+.immortal-toggle { width: 100%; min-width: 0; min-height: 112px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 5px; padding: 7px 4px 5px; border: 2px solid #9f8769; border-radius: 6px; color: #4e4034; background: #ebdcc3; }
 .immortal-toggle:hover { border-color: #6a5542; }
 .immortal-toggle.selected { border-color: #1d8d84; background: #d4e1ce; box-shadow: inset 0 -4px 0 #1d8d84; }
 .immortal-card.favorite .immortal-toggle { box-shadow: inset 0 -4px 0 #1d8d84, inset 0 0 0 1px rgba(214, 148, 25, .5); }

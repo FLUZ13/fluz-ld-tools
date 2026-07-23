@@ -296,10 +296,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .guardian-grid span { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 8px; font-weight: 900; }
 .rarity-common { --rarity: #777161; } .rarity-rare { --rarity: #3983ac; } .rarity-epic { --rarity: #8051ad; } .rarity-legendary { --rarity: #d09825; } .rarity-mythic { --rarity: #db633b; } .rarity-immortal { --rarity: #c83e49; }
 .guardian-grid button[class*="rarity-"] { border-bottom: 4px solid var(--rarity); }
-.board-stage { min-width: 0; padding: 10px 14px 20px; background: #75523f; }
+.board-stage { min-width: 0; overflow: hidden; padding: 10px 14px 20px; background: #75523f; }
 .selection-status { min-height: 32px; display: flex; align-items: center; justify-content: center; gap: 5px; color: #f1dfc2; font-size: 10px; font-weight: 900; }
 .selection-status svg { width: 15px; }
-.interactive-boards { width: 100%; min-height: 560px; display: grid; align-content: center; gap: 20px; margin-inline: auto; padding: clamp(26px, 5vw, 70px); border: 3px solid #a76d2d; background-position: center; background-size: cover; box-shadow: inset 0 0 0 3px rgba(53,43,34,.7), 0 5px 16px rgba(35,24,17,.32); }
+.board-zoom-viewport { max-width: 100%; position: relative; margin-inline: auto; transition: width 140ms ease, height 140ms ease; }
+.interactive-boards { width: 100%; min-height: 560px; display: grid; align-content: center; gap: 20px; margin-inline: auto; padding: clamp(26px, 5vw, 70px); border: 3px solid #a76d2d; background-position: center; background-size: cover; box-shadow: inset 0 0 0 3px rgba(53,43,34,.7), 0 5px 16px rgba(35,24,17,.32); transform-origin: top left; transition: transform 140ms ease; }
 .interactive-boards.players-2 { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(2, auto); padding: clamp(20px, 3vw, 46px); }
 .interactive-board { min-width: 0; position: relative; padding: 35px 16px 16px; border: 3px solid rgba(82,56,40,.85); border-radius: 7px; background: rgba(231,210,179,.82); box-shadow: 0 4px 0 rgba(53,43,34,.38); }
 .interactive-player-label { height: 27px; position: absolute; top: 0; left: 0; display: flex; align-items: center; padding: 0 12px; color: #fff3dc; background: #6d4d3a; border-radius: 0 0 5px 0; font-size: 10px; font-weight: 900; text-transform: uppercase; }

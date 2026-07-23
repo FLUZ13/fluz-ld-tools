@@ -1,5 +1,5 @@
 import { Check, Copy, Eraser, FileDown, FileUp, ImageDown, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users, ZoomOut } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
 import { publishBoard } from "../board/api";
 import { decodeSharedBoard, downloadBlob, encodeSharedBoard, renderBoardPng } from "../board/export";
 import { BOARD_GUARDIANS, BOARD_MAPS, createBoardState, getBoardMap, migrateBoardState, type BoardState, type GuardianRarity } from "../board/model";
@@ -7,6 +7,7 @@ import { deleteBoardSnapshot, listBoardSnapshots, loadBoardDraft, saveBoardDraft
 
 type GuardianFilter = GuardianRarity | "all" | "basic";
 type BoardSlot = { player: number; slot: number };
+type BoardCanvasSize = { width: number; height: number };
 
 const rarities: Array<{ id: GuardianFilter; label: string }> = [
   { id: "all", label: "All" }, { id: "basic", label: "Basic Guardians" },
@@ -39,9 +40,12 @@ export function BoardBuilder() {
   const [boardZoom, setBoardZoom] = useState(loadBoardZoom);
   const [draggedSlot, setDraggedSlot] = useState<BoardSlot | null>(null);
   const [dropTarget, setDropTarget] = useState<BoardSlot | null>(null);
+  const [boardCanvasSize, setBoardCanvasSize] = useState<BoardCanvasSize>({ width: 0, height: 0 });
   const fileInput = useRef<HTMLInputElement>(null);
   const channel = useRef<BroadcastChannel | null>(null);
   const receivedRemoteUpdate = useRef(false);
+  const boardStageRef = useRef<HTMLElement>(null);
+  const boardCanvasRef = useRef<HTMLDivElement>(null);
 
   const refreshSaved = useCallback(async () => setSavedBoards(await listBoardSnapshots()), []);
 
@@ -84,6 +88,25 @@ export function BoardBuilder() {
     localStorage.setItem("ld-board-zoom", String(boardZoom));
   }, [boardZoom]);
 
+  useLayoutEffect(() => {
+    const stage = boardStageRef.current;
+    const canvas = boardCanvasRef.current;
+    if (!stage || !canvas) return;
+
+    const updateCanvasSize = () => {
+      const stageStyle = window.getComputedStyle(stage);
+      const width = Math.max(0, Math.round(stage.clientWidth - Number.parseFloat(stageStyle.paddingLeft) - Number.parseFloat(stageStyle.paddingRight)));
+      const height = Math.round(canvas.offsetHeight);
+      setBoardCanvasSize((current) => current.width === width && current.height === height ? current : { width, height });
+    };
+
+    const observer = new ResizeObserver(updateCanvasSize);
+    observer.observe(stage);
+    observer.observe(canvas);
+    updateCanvasSize();
+    return () => observer.disconnect();
+  }, [board.players, loaded]);
+
   const updateBoard = useCallback((recipe: (draft: BoardState) => void) => {
     setBoard((current) => {
       const next = structuredClone(current);
@@ -117,6 +140,15 @@ export function BoardBuilder() {
     return matchesFilter && guardian.name.toLowerCase().includes(query.toLowerCase());
   }), [query, rarity]);
   const activeMap = getBoardMap(board.map);
+  const boardScale = boardZoom / 100;
+  const boardViewportStyle: CSSProperties | undefined = boardCanvasSize.width && boardCanvasSize.height
+    ? { width: `${Math.round(boardCanvasSize.width * boardScale)}px`, height: `${Math.round(boardCanvasSize.height * boardScale)}px` }
+    : undefined;
+  const boardCanvasStyle: CSSProperties = {
+    backgroundImage: `linear-gradient(rgba(53,43,34,.28), rgba(53,43,34,.46)), url(${activeMap.image})`,
+    width: boardCanvasSize.width ? `${boardCanvasSize.width}px` : undefined,
+    transform: `scale(${boardScale})`,
+  };
 
   const placeGuardian = (player: number, slot: number, guardianId = selectedGuardian) => {
     updateBoard((draft) => { draft.slots[player][slot] = guardianId; });
@@ -214,49 +246,51 @@ export function BoardBuilder() {
           <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`${selectedGuardian === guardian.id ? "selected" : ""} rarity-${guardian.rarity}`} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("text/guardian-id", guardian.id); }} onClick={() => setSelectedGuardian(guardian.id)} title={guardian.name}><img src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
         </section>
 
-        <section className="board-stage" aria-label="Board canvas">
+        <section className="board-stage" aria-label="Board canvas" ref={boardStageRef}>
           <div className="selection-status">{selectedGuardian ? <>Selected: <strong>{BOARD_GUARDIANS.find((guardian) => guardian.id === selectedGuardian)?.name}</strong></> : <><Eraser /> Erase mode</>}</div>
-          <div className={`interactive-boards players-${board.players}`} style={{ backgroundImage: `linear-gradient(rgba(53,43,34,.28), rgba(53,43,34,.46)), url(${activeMap.image})`, zoom: boardZoom / 100 }}>
-            {board.slots.slice(0, board.players).map((slots, player) => (
-              <div className="interactive-board" key={player}>
-                <span className="interactive-player-label">Player {player + 1}</span>
-                <div className="interactive-grid">{slots.map((guardianId, slot) => {
-                  const guardian = guardianId ? BOARD_GUARDIANS.find((item) => item.id === guardianId) : undefined;
-                  const isDragSource = draggedSlot?.player === player && draggedSlot.slot === slot;
-                  const isDropTarget = dropTarget?.player === player && dropTarget.slot === slot;
-                  return <button
-                    key={slot}
-                    draggable={Boolean(guardian)}
-                    className={`${guardian ? `filled rarity-${guardian.rarity}` : ""} ${isDragSource ? "drag-source" : ""} ${isDropTarget ? "drop-target" : ""}`}
-                    onClick={() => placeGuardian(player, slot)}
-                    onDragStart={(event) => {
-                      if (!guardian) return;
-                      const source = { player, slot };
-                      event.dataTransfer.effectAllowed = "move";
-                      event.dataTransfer.setData("application/x-ld-board-slot", JSON.stringify(source));
-                      event.dataTransfer.setData("text/plain", `ld-board-slot:${JSON.stringify(source)}`);
-                      setDraggedSlot(source);
-                    }}
-                    onDragEnd={() => { setDraggedSlot(null); setDropTarget(null); }}
-                    onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = draggedSlot ? "move" : "copy"; setDropTarget({ player, slot }); }}
-                    onDragLeave={() => setDropTarget((current) => current?.player === player && current.slot === slot ? null : current)}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      const source = readDraggedSlot(event);
-                      if (source) moveGuardian(source, { player, slot });
-                      else {
-                        const guardianId = event.dataTransfer.getData("text/guardian-id");
-                        if (guardianId && BOARD_GUARDIANS.some((item) => item.id === guardianId)) placeGuardian(player, slot, guardianId);
-                      }
-                      setDraggedSlot(null);
-                      setDropTarget(null);
-                    }}
-                    title={guardian ? `${guardian.name}. Drag to move, or click to replace or erase.` : `Empty slot ${slot + 1}`}>
-                    <span>{slot + 1}</span>{guardian && <img src={guardian.image} alt={guardian.name} />}
-                  </button>;
-                })}</div>
-              </div>
-            ))}
+          <div className="board-zoom-viewport" style={boardViewportStyle}>
+            <div className={`interactive-boards players-${board.players}`} ref={boardCanvasRef} style={boardCanvasStyle}>
+              {board.slots.slice(0, board.players).map((slots, player) => (
+                <div className="interactive-board" key={player}>
+                  <span className="interactive-player-label">Player {player + 1}</span>
+                  <div className="interactive-grid">{slots.map((guardianId, slot) => {
+                    const guardian = guardianId ? BOARD_GUARDIANS.find((item) => item.id === guardianId) : undefined;
+                    const isDragSource = draggedSlot?.player === player && draggedSlot.slot === slot;
+                    const isDropTarget = dropTarget?.player === player && dropTarget.slot === slot;
+                    return <button
+                      key={slot}
+                      draggable={Boolean(guardian)}
+                      className={`${guardian ? `filled rarity-${guardian.rarity}` : ""} ${isDragSource ? "drag-source" : ""} ${isDropTarget ? "drop-target" : ""}`}
+                      onClick={() => placeGuardian(player, slot)}
+                      onDragStart={(event) => {
+                        if (!guardian) return;
+                        const source = { player, slot };
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("application/x-ld-board-slot", JSON.stringify(source));
+                        event.dataTransfer.setData("text/plain", `ld-board-slot:${JSON.stringify(source)}`);
+                        setDraggedSlot(source);
+                      }}
+                      onDragEnd={() => { setDraggedSlot(null); setDropTarget(null); }}
+                      onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = draggedSlot ? "move" : "copy"; setDropTarget({ player, slot }); }}
+                      onDragLeave={() => setDropTarget((current) => current?.player === player && current.slot === slot ? null : current)}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const source = readDraggedSlot(event);
+                        if (source) moveGuardian(source, { player, slot });
+                        else {
+                          const guardianId = event.dataTransfer.getData("text/guardian-id");
+                          if (guardianId && BOARD_GUARDIANS.some((item) => item.id === guardianId)) placeGuardian(player, slot, guardianId);
+                        }
+                        setDraggedSlot(null);
+                        setDropTarget(null);
+                      }}
+                      title={guardian ? `${guardian.name}. Drag to move, or click to replace or erase.` : `Empty slot ${slot + 1}`}>
+                      <span>{slot + 1}</span>{guardian && <img src={guardian.image} alt={guardian.name} />}
+                    </button>;
+                  })}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 

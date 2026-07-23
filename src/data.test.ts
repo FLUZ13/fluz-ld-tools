@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { VERIFIED_RUNE_ICONS } from "./data/rune-icons";
 import { DATA, createDefaultState, migrateBuilderState, ratingsFor } from "./model";
 
 describe("game data snapshot", () => {
@@ -12,6 +13,16 @@ describe("game data snapshot", () => {
   it("uses the 38 plus 15 tier availability split", () => {
     expect(DATA.runes.filter((rune) => rune.availableTiers.length === 7)).toHaveLength(38);
     expect(DATA.runes.filter((rune) => rune.availableTiers.join(",") === "5,6,7")).toHaveLength(15);
+  });
+
+  it("uses the in-game verified icon for every audited rune", () => {
+    for (const [runeId, icon] of Object.entries(VERIFIED_RUNE_ICONS)) {
+      const rune = DATA.runes.find((candidate) => candidate.id === runeId);
+      expect(rune).toMatchObject(icon);
+    }
+    expect(new Set(DATA.runes.map((rune) => rune.image)).size).toBe(DATA.runes.length);
+    expect(DATA.runes.find((rune) => rune.id === "execution")?.image).toBe("/assets/runes/1035.png");
+    expect(DATA.runes.find((rune) => rune.id === "time-reversal")?.image).toBe("/assets/runes/1045.png");
   });
 
   it("has valid three-mode ratings for every rune and Immortal in both meta versions", () => {

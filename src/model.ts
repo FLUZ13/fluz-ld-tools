@@ -1,4 +1,5 @@
 import gameData from "./data/game-data.json";
+import { VERIFIED_RUNE_ICONS } from "./data/rune-icons";
 
 export type GameMode = "pve" | "pvp" | "guild";
 export type MetaVersion = "1.0" | "1.1";
@@ -77,7 +78,15 @@ export interface GameData {
   ratingVersions: Record<MetaVersion, RatingMatrix>;
 }
 
-export const DATA = gameData as GameData;
+const rawData = gameData as GameData;
+
+export const DATA: GameData = {
+  ...rawData,
+  runes: rawData.runes.map((rune) => {
+    const verifiedIcon = VERIFIED_RUNE_ICONS[rune.id];
+    return verifiedIcon ? { ...rune, ...verifiedIcon } : rune;
+  }),
+};
 export const ratingsFor = (version: MetaVersion) => DATA.ratingVersions[version] ?? DATA.ratings;
 export const TIERS: RuneTier[] = [3, 4, 5, 6, 7];
 export const TIER_NAMES: Record<RuneTier, string> = {

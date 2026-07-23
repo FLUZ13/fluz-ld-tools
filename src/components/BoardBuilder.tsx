@@ -1,0 +1,203 @@
+import { Check, Copy, Eraser, FileDown, FileUp, ImageDown, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { publishBoard } from "../board/api";
+import { decodeSharedBoard, downloadBlob, encodeSharedBoard, renderBoardPng } from "../board/export";
+import { BOARD_GUARDIANS, BOARD_MAPS, createBoardState, getBoardMap, migrateBoardState, type BoardState, type GuardianRarity } from "../board/model";
+import { deleteBoardSnapshot, listBoardSnapshots, loadBoardDraft, saveBoardDraft, saveBoardSnapshot } from "../board/storage";
+
+type GuardianFilter = GuardianRarity | "all" | "basic";
+
+const rarities: Array<{ id: GuardianFilter; label: string }> = [
+  { id: "all", label: "All" }, { id: "basic", label: "Basic Guardians" },
+  { id: "mythic", label: "Mythic" }, { id: "immortal", label: "Immortal" },
+];
+
+function fileSlug(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "lucky-defense-board";
+}
+
+export function BoardBuilder() {
+  const [board, setBoard] = useState(createBoardState);
+  const [loaded, setLoaded] = useState(false);
+  const [selectedGuardian, setSelectedGuardian] = useState<string | null>(null);
+  const [rarity, setRarity] = useState<GuardianFilter>("all");
+  const [query, setQuery] = useState("");
+  const [savedBoards, setSavedBoards] = useState<BoardState[]>([]);
+  const [notice, setNotice] = useState("");
+  const [past, setPast] = useState<BoardState[]>([]);
+  const [future, setFuture] = useState<BoardState[]>([]);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const channel = useRef<BroadcastChannel | null>(null);
+  const receivedRemoteUpdate = useRef(false);
+
+  const refreshSaved = useCallback(async () => setSavedBoards(await listBoardSnapshots()), []);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      const shared = new URLSearchParams(window.location.hash.slice(1)).get("board");
+      let initial: unknown;
+      if (shared) {
+        try { initial = decodeSharedBoard(shared); } catch { setNotice("That shared board link is invalid."); }
+      }
+      initial ??= await loadBoardDraft();
+      const migrated = migrateBoardState(initial);
+      if (active && migrated) setBoard(migrated);
+      if (active) { setLoaded(true); await refreshSaved(); }
+    })();
+    channel.current = new BroadcastChannel("ld-board-builder");
+    channel.current.onmessage = (event) => {
+      const migrated = migrateBoardState(event.data);
+      if (migrated) {
+        receivedRemoteUpdate.current = true;
+        setBoard(migrated);
+      }
+    };
+    return () => { active = false; channel.current?.close(); };
+  }, [refreshSaved]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    const cameFromAnotherTab = receivedRemoteUpdate.current;
+    receivedRemoteUpdate.current = false;
+    const timeout = window.setTimeout(() => {
+      void saveBoardDraft(board);
+      if (!cameFromAnotherTab) channel.current?.postMessage(board);
+    }, 300);
+    return () => window.clearTimeout(timeout);
+  }, [board, loaded]);
+
+  const updateBoard = useCallback((recipe: (draft: BoardState) => void) => {
+    setBoard((current) => {
+      const next = structuredClone(current);
+      recipe(next);
+      next.updatedAt = new Date().toISOString();
+      setPast((items) => [...items.slice(-39), current]);
+      setFuture([]);
+      return next;
+    });
+  }, []);
+
+  const undo = () => setPast((items) => {
+    const previous = items.at(-1);
+    if (!previous) return items;
+    setFuture((next) => [board, ...next].slice(0, 40));
+    setBoard(previous);
+    return items.slice(0, -1);
+  });
+  const redo = () => setFuture((items) => {
+    const next = items[0];
+    if (!next) return items;
+    setPast((previous) => [...previous.slice(-39), board]);
+    setBoard(next);
+    return items.slice(1);
+  });
+
+  const filteredGuardians = useMemo(() => BOARD_GUARDIANS.filter((guardian) => {
+    const matchesFilter = rarity === "all" ||
+      (rarity === "basic" && ["common", "rare", "epic", "legendary"].includes(guardian.rarity)) ||
+      guardian.rarity === rarity;
+    return matchesFilter && guardian.name.toLowerCase().includes(query.toLowerCase());
+  }), [query, rarity]);
+  const activeMap = getBoardMap(board.map);
+
+  const placeGuardian = (player: number, slot: number, guardianId = selectedGuardian) => {
+    updateBoard((draft) => { draft.slots[player][slot] = guardianId; });
+  };
+
+  const exportFile = () => {
+    downloadBlob(new Blob([JSON.stringify(board, null, 2)], { type: "application/json" }), `${fileSlug(board.title)}.ldboard.json`);
+    setNotice("Board file saved.");
+  };
+
+  const loadFile = async (file?: File) => {
+    if (!file) return;
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      const migrated = migrateBoardState(parsed);
+      if (!migrated) throw new Error("This is not a valid LD board file.");
+      setBoard(migrated);
+      setPast([]);
+      setFuture([]);
+      setNotice("Board file loaded.");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Could not load that board."); }
+    if (fileInput.current) fileInput.current.value = "";
+  };
+
+  const saveNamed = async () => {
+    await saveBoardSnapshot(board);
+    await refreshSaved();
+    setNotice("Saved in this browser.");
+  };
+
+  const exportPng = async () => {
+    try {
+      const blob = await renderBoardPng(board);
+      downloadBlob(blob, `${fileSlug(board.title)}.png`);
+      try { await publishBoard(board); setNotice("PNG saved and your latest board was added to Discover."); }
+      catch { setNotice("PNG saved. Discover publishing is currently offline."); }
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Could not export the PNG."); }
+  };
+
+  const share = async () => {
+    const url = new URL("/board-builder", window.location.origin);
+    url.hash = new URLSearchParams({ board: encodeSharedBoard(board) }).toString();
+    await navigator.clipboard.writeText(url.toString());
+    setNotice("Private board link copied.");
+  };
+
+  if (!loaded) return <div className="board-loading">Loading your board</div>;
+
+  return (
+    <main className="board-builder-page">
+      <section className="board-toolbar">
+        <input className="board-title-input" value={board.title} maxLength={80} aria-label="Board title" onChange={(event) => updateBoard((draft) => { draft.title = event.target.value; })} />
+        <label className="select-control"><span>Map</span><select value={board.map} onChange={(event) => updateBoard((draft) => { draft.map = event.target.value as BoardState["map"]; })}>{BOARD_MAPS.map((map) => <option key={map.id} value={map.id}>{map.name}</option>)}</select></label>
+        <div className="segmented-control" aria-label="Number of players"><button className={board.players === 1 ? "active" : ""} onClick={() => updateBoard((draft) => { draft.players = 1; })}>1 player</button><button className={board.players === 2 ? "active" : ""} onClick={() => updateBoard((draft) => { draft.players = 2; })}><Users />2 players</button></div>
+        <div className="board-toolbar-actions">
+          <button className="icon-button" onClick={undo} disabled={past.length === 0} title="Undo" aria-label="Undo"><Undo2 /></button>
+          <button className="icon-button" onClick={redo} disabled={future.length === 0} title="Redo" aria-label="Redo"><Redo2 /></button>
+          <button className="text-button framed" onClick={() => { const next = createBoardState(); setBoard(next); setPast([]); setFuture([]); }} title="New board" aria-label="New board"><Plus /><span>New</span></button>
+          <button className="text-button framed" onClick={() => { void saveNamed(); }} title="Save board in this browser" aria-label="Save board"><Save /><span>Save</span></button>
+          <button className="text-button framed" onClick={exportFile} title="Save board file" aria-label="Save board file"><FileDown /><span>Save file</span></button>
+          <button className="text-button framed" onClick={() => fileInput.current?.click()} title="Load board file" aria-label="Load board file"><FileUp /><span>Load file</span></button>
+          <input ref={fileInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => { void loadFile(event.target.files?.[0]); }} />
+          <button className="text-button framed" onClick={() => { void share(); }} title="Copy private board link" aria-label="Share board"><Share2 /><span>Share</span></button>
+          <button className="primary-button compact-action" onClick={() => { void exportPng(); }} title="Export board as PNG" aria-label="Export PNG"><ImageDown /><span>PNG</span></button>
+        </div>
+      </section>
+
+      {notice && <div className="board-notice" role="status"><Check />{notice}<button onClick={() => setNotice("")} aria-label="Dismiss">x</button></div>}
+
+      <div className="board-workspace">
+        <section className="guardian-library">
+          <header><div><h2>Guardians</h2><span>{filteredGuardians.length} available</span></div><button className={`icon-button quiet ${selectedGuardian === null ? "selected" : ""}`} onClick={() => setSelectedGuardian(null)} title="Erase a slot" aria-label="Erase a slot"><Eraser /></button></header>
+          <label className="search-field"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search guardians" /></label>
+          <div className="rarity-tabs">{rarities.map((item) => <button key={item.id} className={rarity === item.id ? "active" : ""} onClick={() => setRarity(item.id)}>{item.label}</button>)}</div>
+          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`${selectedGuardian === guardian.id ? "selected" : ""} rarity-${guardian.rarity}`} onDragStart={(event) => event.dataTransfer.setData("text/guardian-id", guardian.id)} onClick={() => setSelectedGuardian(guardian.id)} title={guardian.name}><img src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
+        </section>
+
+        <section className="board-stage" aria-label="Board canvas">
+          <div className="selection-status">{selectedGuardian ? <>Selected: <strong>{BOARD_GUARDIANS.find((guardian) => guardian.id === selectedGuardian)?.name}</strong></> : <><Eraser /> Erase mode</>}</div>
+          <div className={`interactive-boards players-${board.players}`} style={{ backgroundImage: `linear-gradient(rgba(53,43,34,.28), rgba(53,43,34,.46)), url(${activeMap.image})` }}>
+            {board.slots.slice(0, board.players).map((slots, player) => (
+              <div className="interactive-board" key={player}>
+                <span className="interactive-player-label">Player {player + 1}</span>
+                <div className="interactive-grid">{slots.map((guardianId, slot) => {
+                  const guardian = guardianId ? BOARD_GUARDIANS.find((item) => item.id === guardianId) : undefined;
+                  return <button key={slot} className={guardian ? `filled rarity-${guardian.rarity}` : ""} onClick={() => placeGuardian(player, slot)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); placeGuardian(player, slot, event.dataTransfer.getData("text/guardian-id") || null); }} title={guardian ? `${guardian.name}. Click to replace or erase.` : `Empty slot ${slot + 1}`}><span>{slot + 1}</span>{guardian && <img src={guardian.image} alt={guardian.name} />}</button>;
+                })}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <aside className="saved-boards-panel">
+          <header><div><h2>Saved boards</h2><span>Stored in this browser</span></div></header>
+          {savedBoards.length === 0 ? <div className="saved-empty">Your named saves will appear here.</div> : <div className="saved-board-list">{savedBoards.map((saved) => <article key={saved.id}><button className="saved-board-load" onClick={() => { const migrated = migrateBoardState(saved); if (migrated) { setBoard(migrated); setPast([]); setFuture([]); } }}><strong>{saved.title}</strong><span>{getBoardMap(saved.map).name} - {saved.players}P</span></button><button className="icon-button quiet" onClick={() => { void deleteBoardSnapshot(saved.id).then(refreshSaved); }} title="Delete saved board" aria-label={`Delete ${saved.title}`}><Trash2 /></button></article>)}</div>}
+          <div className="saved-panel-tip"><Copy /> Shared links contain the board layout. No account is needed.</div>
+        </aside>
+      </div>
+    </main>
+  );
+}

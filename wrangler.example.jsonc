@@ -1,0 +1,41 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "fluz-ld-tools",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-07-22",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fluz-ld-tools",
+      "database_id": "replace-with-your-d1-database-id",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "SYNC_BUCKET",
+      "bucket_name": "fluz-ld-tools-sync"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "SYNC_RATE_LIMITER",
+      "namespace_id": "replace-with-your-rate-limit-namespace-id",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

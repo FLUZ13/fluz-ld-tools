@@ -45,7 +45,7 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
           <button className="text-button" onClick={onExport} title="Save a local backup file"><FileDown /><span>Save file</span></button>
           <button className="text-button" onClick={() => fileInput.current?.click()} title="Load a local backup file"><FileUp /><span>Load file</span></button>
           <input ref={fileInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => { void loadFile(event.target.files?.[0]); }} />
-          <button className="icon-button quiet" onClick={() => mutate((draft) => { draft.inventory = {}; draft.lockedAssignments = []; })} title="Clear inventory" aria-label="Clear inventory"><Trash2 /></button>
+          <button className="icon-button quiet" onClick={() => mutate((draft) => { draft.inventory = {}; })} title="Clear inventory" aria-label="Clear inventory"><Trash2 /></button>
         </div>
       </div>
       <div className="inventory-tools">

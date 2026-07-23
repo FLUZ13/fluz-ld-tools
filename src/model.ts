@@ -28,12 +28,6 @@ export interface ImmortalDefinition {
   provisional: boolean;
 }
 
-export interface LockedAssignment {
-  immortalId: string;
-  runeId: string;
-  tier: RuneTier;
-}
-
 export interface BuilderState {
   schemaVersion: 1;
   inventory: Record<string, Partial<Record<RuneTier, number>>>;
@@ -41,15 +35,15 @@ export interface BuilderState {
   favoriteImmortalIds: string[];
   mode: GameMode;
   metaVersion: MetaVersion;
-  lockedAssignments: LockedAssignment[];
   updatedAt: string;
 }
 
-export interface Assignment extends LockedAssignment {
+export interface Assignment {
+  immortalId: string;
+  runeId: string;
+  tier: RuneTier;
   score: number;
   confidence: Confidence;
-  locked: boolean;
-  alternatives: Array<{ immortalId: string; score: number; confidence: Confidence }>;
 }
 
 export interface Recommendation {
@@ -106,7 +100,6 @@ export const createDefaultState = (): BuilderState => ({
   favoriteImmortalIds: [],
   mode: "pve",
   metaVersion: "1.1",
-  lockedAssignments: [],
   updatedAt: new Date().toISOString(),
 });
 
@@ -122,7 +115,8 @@ export function migrateBuilderState(state: BuilderState): BuilderState {
   const favoriteImmortalIds = Array.isArray(state.favoriteImmortalIds)
     ? [...new Set(state.favoriteImmortalIds.filter((id) => immortalIds.has(id)))]
     : [];
-  const versioned = { ...state, favoriteImmortalIds, metaVersion: state.metaVersion === "1.1" ? "1.1" : "1.0" as MetaVersion };
+  const { lockedAssignments: _legacyLocks, ...withoutLegacyLocks } = state as BuilderState & { lockedAssignments?: unknown };
+  const versioned = { ...withoutLegacyLocks, favoriteImmortalIds, metaVersion: state.metaVersion === "1.1" ? "1.1" : "1.0" as MetaVersion };
   const addedFormId = "ace-bat-man-batter";
   if (versioned.selectedImmortalIds.includes(addedFormId)) return versioned;
   const previousRoster = DATA.immortals.filter((immortal) => immortal.id !== addedFormId);

@@ -26,14 +26,14 @@ describe("optimizer", () => {
     expect(new Set(result.assignments.map((assignment) => assignment.runeId)).size).toBe(result.assignments.length);
   });
 
-  it("honors valid locked assignments while recalculating remaining slots", () => {
+  it("does not carry legacy locks into new recommendations", () => {
     const state = createDefaultState();
     state.selectedImmortalIds = ["ghost-ninja", "top-vayne"];
     owned(state.inventory, "strength", 7, 1);
     owned(state.inventory, "precision", 7, 1);
-    state.lockedAssignments = [{ immortalId: "top-vayne", runeId: "strength", tier: 7 }];
-    const assignments = optimizeAssignments(state).flatMap((result) => result.assignments);
-    expect(assignments).toContainEqual(expect.objectContaining({ immortalId: "top-vayne", runeId: "strength", tier: 7, locked: true }));
+    const legacyState = { ...state, lockedAssignments: [{ immortalId: "top-vayne", runeId: "strength", tier: 7 }] };
+    const assignments = optimizeAssignments(legacyState as BuilderState).flatMap((result) => result.assignments);
+    expect(assignments).not.toContainEqual(expect.objectContaining({ locked: true }));
   });
 
   it("only assigns runes to selected Immortals", () => {

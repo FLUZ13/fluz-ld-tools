@@ -112,7 +112,7 @@ export function useBuilderStore() {
         state,
         createdAt: new Date().toISOString(),
         ownedCount: countOwnedRunes(state),
-        assignmentCount: state.lockedAssignments.length,
+        assignmentCount: 0,
       }).then(() => setHistoryVersion((version) => version + 1));
     }, 1400);
     return () => { window.clearTimeout(saveTimer); window.clearTimeout(historyTimer); };

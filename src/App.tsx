@@ -80,12 +80,12 @@ function BuilderApp() {
       <header className="app-header">
         <Brand title="LD Rune Builder" />
         <PageNavigation active="builder" />
-        <nav className="mode-control" aria-label="Game mode">{modes.map((mode) => <button key={mode.id} className={store.state.mode === mode.id ? "active" : ""} onClick={() => store.mutate((draft) => { draft.mode = mode.id; })}>{mode.label}</button>)}</nav>
-        <nav className="meta-version-control" aria-label="Rune meta version">
-          <button className={store.state.metaVersion === "1.0" ? "active" : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = "1.0"; })}>v1.0</button>
-          <button className={store.state.metaVersion === "1.1" ? "active" : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = "1.1"; })}>v1.1</button>
-        </nav>
         <div className="header-actions">
+          <nav className="meta-version-control" aria-label="Rune meta version">
+            <button className={store.state.metaVersion === "1.0" ? "active" : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = "1.0"; })}>v1.0</button>
+            <button className={store.state.metaVersion === "1.1" ? "active" : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = "1.1"; })}>v1.1</button>
+          </nav>
+          <nav className="mode-control" aria-label="Game mode">{modes.map((mode) => <button key={mode.id} className={store.state.mode === mode.id ? "active" : ""} onClick={() => store.mutate((draft) => { draft.mode = mode.id; })}>{mode.label}</button>)}</nav>
           <button className="icon-button" onClick={store.undo} disabled={!store.canUndo} title="Undo" aria-label="Undo"><Undo2 /></button>
           <button className="icon-button" onClick={store.redo} disabled={!store.canRedo} title="Redo" aria-label="Redo"><Redo2 /></button>
           <button className="icon-button" onClick={() => { void store.refreshHistory(); setHistoryOpen(true); }} title="Version history" aria-label="Version history"><History /></button>
@@ -107,7 +107,7 @@ function BuilderApp() {
       <main className="builder-layout">
         <div className={`inventory-column mobile-${mobileTab}`}><Inventory state={store.state} mutate={store.mutate} onExport={store.exportBackup} onImport={store.importBackup} /></div>
         <div className={`roster-column mobile-${mobileTab}`}><Roster state={store.state} mutate={store.mutate} /></div>
-        <div className={`results-column mobile-${mobileTab}`}><Results state={store.state} recommendations={recommendations} mutate={store.mutate} /></div>
+        <div className={`results-column mobile-${mobileTab}`}><Results state={store.state} recommendations={recommendations} /></div>
       </main>
 
       <SiteFooter />

@@ -1,4 +1,4 @@
-import { DATA, TIERS, migrateBuilderState, type BuilderState, type GameMode, type MetaVersion, type RuneTier } from "../model";
+import { DATA, TIERS, migrateBuilderState, type BuilderState, type GameMode, type MetaVersion } from "../model";
 
 interface BackupEnvelope {
   format: "ld-rune-builder-backup";
@@ -8,7 +8,6 @@ interface BackupEnvelope {
 }
 
 const modes = new Set<GameMode>(["pve", "pvp", "guild"]);
-const runeIds = new Set(DATA.runes.map((rune) => rune.id));
 const immortalIds = new Set(DATA.immortals.map((immortal) => immortal.id));
 
 export function serializeBackup(state: BuilderState) {
@@ -53,18 +52,6 @@ export function parseBackup(text: string): BuilderState {
     : [];
   const mode = modes.has(raw.mode as GameMode) ? raw.mode as GameMode : "pve";
   const metaVersion: MetaVersion = raw.metaVersion === "1.1" ? "1.1" : "1.0";
-  const lockedAssignments: BuilderState["lockedAssignments"] = [];
-  if (Array.isArray(raw.lockedAssignments)) {
-    for (const value of raw.lockedAssignments) {
-      if (!value || typeof value !== "object") continue;
-      const lock = value as Record<string, unknown>;
-      const tier = Number(lock.tier) as RuneTier;
-      if (typeof lock.immortalId !== "string" || typeof lock.runeId !== "string") continue;
-      if (!immortalIds.has(lock.immortalId) || !runeIds.has(lock.runeId) || !TIERS.includes(tier)) continue;
-      lockedAssignments.push({ immortalId: lock.immortalId, runeId: lock.runeId, tier });
-    }
-  }
-
   return migrateBuilderState({
     schemaVersion: 1,
     inventory,
@@ -72,7 +59,6 @@ export function parseBackup(text: string): BuilderState {
     favoriteImmortalIds,
     mode,
     metaVersion,
-    lockedAssignments,
     updatedAt: new Date().toISOString(),
   });
 }

@@ -12,7 +12,6 @@ export function Roster({ state, mutate }: RosterProps) {
   const toggle = (id: string) => mutate((draft) => {
     if (draft.selectedImmortalIds.includes(id)) {
       draft.selectedImmortalIds = draft.selectedImmortalIds.filter((value) => value !== id);
-      draft.lockedAssignments = draft.lockedAssignments.filter((lock) => lock.immortalId !== id);
     } else draft.selectedImmortalIds.push(id);
   });
   const toggleFavorite = (id: string) => mutate((draft) => {
@@ -26,7 +25,7 @@ export function Roster({ state, mutate }: RosterProps) {
         <div><span className="step-number">2</span><h2 id="roster-title">Immortal forms</h2><span className="section-count">{selected.size}/{DATA.immortals.length}</span></div>
         <div className="heading-actions">
           <button className="text-button" onClick={() => mutate((draft) => { draft.selectedImmortalIds = DATA.immortals.map((item) => item.id); })}><CheckCheck />All</button>
-          <button className="text-button" onClick={() => mutate((draft) => { draft.selectedImmortalIds = []; draft.lockedAssignments = []; })}><X />Clear</button>
+          <button className="text-button" onClick={() => mutate((draft) => { draft.selectedImmortalIds = []; })}><X />Clear</button>
         </div>
       </div>
       <div className="roster-grid">

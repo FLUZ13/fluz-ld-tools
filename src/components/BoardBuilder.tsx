@@ -246,7 +246,7 @@ export function BoardBuilder() {
           <header><div><h2>Guardians</h2><span>{filteredGuardians.length} available</span></div></header>
           <label className="search-field"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search guardians" /></label>
           <div className="rarity-tabs">{rarities.map((item) => <button key={item.id} className={rarity === item.id ? "active" : ""} onClick={() => setRarity(item.id)}>{item.label}</button>)}</div>
-          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`rarity-${guardian.rarity}`} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("text/guardian-id", guardian.id); }} title={`Drag ${guardian.name} onto the board`}><img src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
+          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`rarity-${guardian.rarity}`} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("text/guardian-id", guardian.id); }} title={`Drag ${guardian.name} onto the board`}><img className={`guardian-thumbnail guardian-thumbnail-${guardian.id}`} src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
         </section>
 
         <section className="board-stage" aria-label="Board canvas" ref={boardStageRef}>

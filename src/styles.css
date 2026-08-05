@@ -296,9 +296,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .rarity-tabs button { height: 27px; flex: 0 0 auto; padding: 0 7px; border: 1px solid #a58b6b; border-radius: 4px; color: #655241; background: #eadcc5; font-size: 9px; font-weight: 900; }
 .rarity-tabs button.active { color: #fff6e6; background: #6d4d3a; border-color: #4f372b; }
 .guardian-grid { height: calc(100vh - 312px); overflow: auto; display: grid; grid-template-columns: repeat(4, minmax(54px, 1fr)); align-content: start; gap: 5px; padding: 0 8px 10px; }
-.guardian-grid button { min-width: 0; min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; padding: 4px 2px; border: 1px solid #9c866e; border-radius: 5px; color: var(--ink); background: #f0e2cc; }
+.guardian-grid button { min-width: 0; min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; padding: 4px 2px; overflow: hidden; border: 1px solid #9c866e; border-radius: 5px; color: var(--ink); background: #f0e2cc; }
 .guardian-grid button:hover, .guardian-grid button.selected { border-color: #177f82; box-shadow: inset 0 0 0 2px #28a6a4; }
 .guardian-grid img { width: 46px; height: 46px; object-fit: contain; }
+.guardian-grid .guardian-thumbnail-15009 { transform: scale(1.25); transform-origin: center 62%; }
+.guardian-grid .guardian-thumbnail-15011 { transform: scale(1.16); transform-origin: center 60%; }
+.guardian-grid .guardian-thumbnail-15014 { transform: scale(1.26); transform-origin: center 62%; }
+.guardian-grid .guardian-thumbnail-15019 { transform: scale(1.24); transform-origin: center 60%; }
 .guardian-grid span { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 8px; font-weight: 900; }
 .rarity-common { --rarity: #777161; } .rarity-rare { --rarity: #3983ac; } .rarity-epic { --rarity: #8051ad; } .rarity-legendary { --rarity: #d09825; } .rarity-mythic { --rarity: #db633b; } .rarity-immortal { --rarity: #c83e49; }
 .guardian-grid button[class*="rarity-"] { border-bottom: 4px solid var(--rarity); }
@@ -455,10 +459,18 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .section-heading { min-height: 49px; }
   .inventory-section { overflow: hidden; }
   .inventory-tools { padding: 7px; }
-  .tier-header, .rune-row { width: 560px; }
-  .tier-header { padding-left: 7px; padding-right: 7px; }
-  .rune-list { overflow: auto; }
-  .rune-row { padding-left: 7px; padding-right: 7px; }
+  .tier-header, .rune-row { width: 100%; min-width: 0; grid-template-columns: clamp(92px, 30vw, 134px) minmax(0, 1fr); gap: 4px; }
+  .tier-header { padding-left: 5px; padding-right: 5px; }
+  .tier-header .tier-labels, .rune-row .tier-inputs { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; }
+  .tier-header .tier-labels > span { overflow: hidden; font-size: clamp(7px, 2.1vw, 9px); text-overflow: ellipsis; white-space: nowrap; }
+  .rune-list { overflow-x: hidden; overflow-y: auto; }
+  .rune-row { padding-left: 5px; padding-right: 5px; }
+  .rune-identity { gap: 5px; }
+  .rune-identity img { width: clamp(29px, 8vw, 36px); height: clamp(29px, 8vw, 36px); }
+  .rune-identity strong { font-size: clamp(10px, 3vw, 12px); }
+  .rune-identity span { font-size: 8px; }
+  .quantity-control { height: 33px; grid-template-columns: clamp(14px, 4.6vw, 20px) minmax(12px, 1fr) clamp(14px, 4.6vw, 20px); }
+  .quantity-control button svg { width: clamp(11px, 3.6vw, 15px); height: clamp(11px, 3.6vw, 15px); }
   .roster-grid { grid-template-columns: repeat(3, minmax(76px, 1fr)); padding: 8px; }
   .immortal-toggle { min-height: 100px; }
   .results-list { padding: 8px; }
@@ -483,7 +495,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .runes-table-wrap { height: calc(100vh - 316px); }
   .runes-data-table .description-column, .runes-data-table .rank-column, .runes-data-table .remarks-column { display: none; }
   .runes-data-table, .runes-data-table tbody .rune-name-column { font-size: 9px; }
-  .rune-name-column { width: 148px; min-width: 148px; }
+  .runes-data-table .rune-name-column { width: clamp(96px, 27vw, 124px); min-width: clamp(96px, 27vw, 124px); }
+  .runes-data-table tbody .rune-name-column { position: static; }
+  .runes-data-table thead .rune-name-column { left: auto; }
   .rune-name-column img { width: 32px; height: 32px; }
   .rune-name-column span { font-size: 10px; }
   .board-toolbar { align-items: stretch; }

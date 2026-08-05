@@ -5,9 +5,9 @@ import { DATA, createDefaultState, migrateBuilderState, ratingsFor } from "./mod
 describe("game data snapshot", () => {
   it("contains the complete requested roster and rune set", () => {
     expect(DATA.runes).toHaveLength(53);
-    expect(DATA.immortals).toHaveLength(27);
+    expect(DATA.immortals).toHaveLength(28);
     expect(new Set(DATA.runes.map((rune) => rune.id)).size).toBe(53);
-    expect(new Set(DATA.immortals.map((immortal) => immortal.id)).size).toBe(27);
+    expect(new Set(DATA.immortals.map((immortal) => immortal.id)).size).toBe(28);
   });
 
   it("uses the 38 plus 15 tier availability split", () => {
@@ -35,10 +35,12 @@ describe("game data snapshot", () => {
     expect(DATA.immortals.find((immortal) => immortal.id === "ace-bat-man-batter")?.image).toBe("/assets/immortals/15010-verified.png");
     expect(DATA.immortals.find((immortal) => immortal.id === "sage-kun")?.image).toBe("/assets/immortals/15018.png");
     expect(DATA.immortals.find((immortal) => immortal.id === "azure-dragon-taoist")?.image).toBe("/assets/immortals/15016.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "knight-lancelot")?.image).toBe("/assets/immortals/15003.png");
+    expect(DATA.immortals.find((immortal) => immortal.id === "knight-lancelot")?.boardImage).toBe("/assets/board/guardians/15003.png");
   });
 
-  it("has valid three-mode ratings for every rune and Immortal in both meta versions", () => {
-    for (const metaVersion of ["1.0", "1.1"] as const) {
+  it("has valid three-mode ratings for every rune and Immortal in every meta version", () => {
+    for (const metaVersion of ["1.0", "1.1", "1.2", "1.3"] as const) {
       const ratings = ratingsFor(metaVersion);
       for (const rune of DATA.runes) {
         for (const immortal of DATA.immortals) {
@@ -59,13 +61,25 @@ describe("game data snapshot", () => {
     expect(ratingsFor("1.1").mana["i-am-meow"].pve).toBe(5);
   });
 
+  it("preserves historical snapshots and applies the post-patch v1.3 audit", () => {
+    expect(ratingsFor("1.1").magic["knight-lancelot"].pve).toBeNull();
+    expect(ratingsFor("1.2").magic["knight-lancelot"].pve).toBe(5);
+    expect(ratingsFor("1.1").magic["giga-chad"].pve).toBe(2);
+    expect(ratingsFor("1.3").magic["giga-chad"].pve).toBe(0);
+    expect(ratingsFor("1.3")["focused-aim"]["azure-dragon-taoist"].pve).toBe(0);
+    expect(createDefaultState().metaVersion).toBe("1.3");
+  });
+
   it("keeps legacy all-selected rosters complete after adding a form", () => {
     const legacy = createDefaultState();
     legacy.selectedImmortalIds = legacy.selectedImmortalIds.filter((id) => id !== "ace-bat-man-batter");
+    legacy.selectedImmortalIds = legacy.selectedImmortalIds.filter((id) => id !== "knight-lancelot");
     expect(migrateBuilderState(legacy).selectedImmortalIds).toContain("ace-bat-man-batter");
+    expect(migrateBuilderState(legacy).selectedImmortalIds).toContain("knight-lancelot");
 
     legacy.selectedImmortalIds = legacy.selectedImmortalIds.filter((id) => id !== "ghost-ninja");
     expect(migrateBuilderState(legacy).selectedImmortalIds).not.toContain("ace-bat-man-batter");
+    expect(migrateBuilderState(legacy).selectedImmortalIds).not.toContain("knight-lancelot");
     expect(migrateBuilderState({ ...legacy, metaVersion: undefined as never }).metaVersion).toBe("1.0");
   });
 });

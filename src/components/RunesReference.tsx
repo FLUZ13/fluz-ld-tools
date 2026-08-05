@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DATA, ratingsFor, type GameMode, type ImmortalDefinition, type MetaVersion } from "../model";
+import { DATA, META_VERSIONS, ratingsFor, type GameMode, type ImmortalDefinition, type MetaVersion } from "../model";
 
 const roles: Array<{ id: ImmortalDefinition["role"]; label: string }> = [
   { id: "support", label: "Support" },
@@ -17,7 +17,7 @@ const scoreLabels = ["X", "Low", "Maybe", "Good", "Great", "Best"];
 
 export function RunesReference() {
   const [mode, setMode] = useState<GameMode>("pve");
-  const [metaVersion, setMetaVersion] = useState<MetaVersion>("1.1");
+  const [metaVersion, setMetaVersion] = useState<MetaVersion>("1.3");
   const [query, setQuery] = useState("");
   const ratings = ratingsFor(metaVersion);
   const groupedImmortals = useMemo(() => roles.map((role) => ({
@@ -36,8 +36,7 @@ export function RunesReference() {
         </div>
         <label className="search-field reference-search"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search runes or remarks" /></label>
         <nav className="meta-version-control" aria-label="Rune meta version">
-          <button className={metaVersion === "1.0" ? "active" : ""} onClick={() => setMetaVersion("1.0")}>v1.0</button>
-          <button className={metaVersion === "1.1" ? "active" : ""} onClick={() => setMetaVersion("1.1")}>v1.1</button>
+          {META_VERSIONS.map((version) => <button key={version} className={metaVersion === version ? "active" : ""} onClick={() => setMetaVersion(version)}>v{version}</button>)}
         </nav>
         <nav className="reference-mode" aria-label="Rating mode">
           {modes.map((item) => <button key={item.id} className={mode === item.id ? "active" : ""} onClick={() => setMode(item.id)}>{item.label}</button>)}

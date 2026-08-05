@@ -12,7 +12,7 @@ import { RunesReference } from "./components/RunesReference";
 import { SyncDialog } from "./components/SyncDialog";
 import { useBuilderStore } from "./hooks/useBuilderStore";
 import { optimizeAssignments } from "./lib/optimizer";
-import { DATA, countOwnedRunes, type GameMode } from "./model";
+import { DATA, META_VERSIONS, countOwnedRunes, type GameMode } from "./model";
 
 type MobileTab = "inventory" | "roster" | "results";
 
@@ -82,8 +82,7 @@ function BuilderApp() {
         <PageNavigation active="builder" />
         <div className="header-actions">
           <nav className="meta-version-control" aria-label="Rune meta version">
-            <button className={store.state.metaVersion === "1.0" ? "active" : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = "1.0"; })}>v1.0</button>
-            <button className={store.state.metaVersion === "1.1" ? "active" : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = "1.1"; })}>v1.1</button>
+            {META_VERSIONS.map((version) => <button key={version} className={store.state.metaVersion === version ? "active" : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = version; })}>v{version}</button>)}
           </nav>
           <nav className="mode-control" aria-label="Game mode">{modes.map((mode) => <button key={mode.id} className={store.state.mode === mode.id ? "active" : ""} onClick={() => store.mutate((draft) => { draft.mode = mode.id; })}>{mode.label}</button>)}</nav>
           <button className="icon-button" onClick={store.undo} disabled={!store.canUndo} title="Undo" aria-label="Undo"><Undo2 /></button>

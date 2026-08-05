@@ -12,7 +12,7 @@ describe("local backup files", () => {
     const restored = parseBackup(serializeBackup(state));
     expect(restored.inventory.strength?.[7]).toBe(2);
     expect(restored.mode).toBe("guild");
-    expect(restored.metaVersion).toBe("1.1");
+    expect(restored.metaVersion).toBe("1.3");
     expect(restored.selectedImmortalIds).toEqual(["ghost-ninja"]);
     expect(restored.favoriteImmortalIds).toEqual(["top-vayne"]);
   });

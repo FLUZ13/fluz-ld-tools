@@ -2,10 +2,10 @@ import gameData from "./data/game-data.json";
 import { VERIFIED_RUNE_ICONS } from "./data/rune-icons";
 
 export type GameMode = "pve" | "pvp" | "guild";
-export type MetaVersion = "1.0" | "1.1";
+export type MetaVersion = "1.0" | "1.1" | "1.2" | "1.3";
 export type RuneTier = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type Confidence = "source" | "provisional";
-export const META_VERSIONS: MetaVersion[] = ["1.0", "1.1"];
+export const META_VERSIONS: MetaVersion[] = ["1.0", "1.1", "1.2", "1.3"];
 
 export interface RuneDefinition {
   id: string;
@@ -99,7 +99,7 @@ export const createDefaultState = (): BuilderState => ({
   selectedImmortalIds: DATA.immortals.map((immortal) => immortal.id),
   favoriteImmortalIds: [],
   mode: "pve",
-  metaVersion: "1.1",
+  metaVersion: "1.3",
   updatedAt: new Date().toISOString(),
 });
 
@@ -116,15 +116,21 @@ export function migrateBuilderState(state: BuilderState): BuilderState {
     ? [...new Set(state.favoriteImmortalIds.filter((id) => immortalIds.has(id)))]
     : [];
   const { lockedAssignments: _legacyLocks, ...withoutLegacyLocks } = state as BuilderState & { lockedAssignments?: unknown };
-  const versioned = { ...withoutLegacyLocks, favoriteImmortalIds, metaVersion: state.metaVersion === "1.1" ? "1.1" : "1.0" as MetaVersion };
-  const addedFormId = "ace-bat-man-batter";
-  if (versioned.selectedImmortalIds.includes(addedFormId)) return versioned;
-  const previousRoster = DATA.immortals.filter((immortal) => immortal.id !== addedFormId);
-  const selected = new Set(versioned.selectedImmortalIds);
-  if (!previousRoster.every((immortal) => selected.has(immortal.id))) return versioned;
-  return {
-    ...versioned,
-    selectedImmortalIds: [...versioned.selectedImmortalIds, addedFormId],
-    updatedAt: new Date().toISOString(),
-  };
+  const metaVersion = META_VERSIONS.includes(state.metaVersion) ? state.metaVersion : "1.0";
+  const versioned = { ...withoutLegacyLocks, favoriteImmortalIds, metaVersion };
+  const addedForms = ["ace-bat-man-batter", "knight-lancelot"];
+  const selected = new Set(versioned.selectedImmortalIds.filter((id) => immortalIds.has(id)));
+  let changed = selected.size !== versioned.selectedImmortalIds.length;
+
+  for (const [index, addedFormId] of addedForms.entries()) {
+    if (selected.has(addedFormId)) continue;
+    const laterAdditions = new Set(addedForms.slice(index));
+    const previousRoster = DATA.immortals.filter((immortal) => !laterAdditions.has(immortal.id));
+    if (!previousRoster.every((immortal) => selected.has(immortal.id))) continue;
+    selected.add(addedFormId);
+    changed = true;
+  }
+
+  if (!changed) return versioned;
+  return { ...versioned, selectedImmortalIds: [...selected], updatedAt: new Date().toISOString() };
 }

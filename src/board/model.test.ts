@@ -5,7 +5,7 @@ import { BOARD_GUARDIAN_BY_ID, BOARD_GUARDIANS, BOARD_MAPS, createBoardState, is
 describe("board model", () => {
   it("contains every requested map and guardian rarity", () => {
     expect(BOARD_MAPS).toHaveLength(8);
-    expect(BOARD_GUARDIANS).toHaveLength(77);
+    expect(BOARD_GUARDIANS).toHaveLength(78);
     expect(new Set(BOARD_GUARDIANS.map((guardian) => guardian.rarity))).toEqual(
       new Set(["common", "rare", "epic", "legendary", "mythic", "immortal"]),
     );

@@ -1,4 +1,4 @@
-import { DATA, TIERS, migrateBuilderState, type BuilderState, type GameMode, type MetaVersion } from "../model";
+import { DATA, META_VERSIONS, TIERS, migrateBuilderState, type BuilderState, type GameMode, type MetaVersion } from "../model";
 
 interface BackupEnvelope {
   format: "ld-rune-builder-backup";
@@ -51,7 +51,7 @@ export function parseBackup(text: string): BuilderState {
     ? [...new Set(raw.favoriteImmortalIds.filter((id: unknown): id is string => typeof id === "string" && immortalIds.has(id)))]
     : [];
   const mode = modes.has(raw.mode as GameMode) ? raw.mode as GameMode : "pve";
-  const metaVersion: MetaVersion = raw.metaVersion === "1.1" ? "1.1" : "1.0";
+  const metaVersion: MetaVersion = META_VERSIONS.includes(raw.metaVersion as MetaVersion) ? raw.metaVersion as MetaVersion : "1.0";
   return migrateBuilderState({
     schemaVersion: 1,
     inventory,

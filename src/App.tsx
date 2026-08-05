@@ -82,7 +82,6 @@ function LandingPage() {
           <header className="landing-branding">
             <img src="/assets/ui/rune-smith.png" alt="" />
             <div>
-              <img className="landing-title-banner" src="/assets/home/lucky-defense-title.png" alt="Lucky Defense" />
               <span>FLUZ Tools</span><h1>Lucky Defense Tools</h1>
             </div>
           </header>

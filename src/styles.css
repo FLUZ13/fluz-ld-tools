@@ -62,11 +62,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .mode-control button { min-width: 64px; height: 30px; border: 0; border-radius: 4px; color: #bfb3a3; background: transparent; font-weight: 800; }
 .mode-control button.active { color: #2c251f; background: #e6bd58; }
 .meta-version-status { display: flex; align-items: center; gap: 8px; }
-.meta-version-warning { color: #ffd0cb; font-size: 11px; font-weight: 900; white-space: nowrap; }
-.meta-version-control { display: flex; align-items: center; height: 32px; padding: 2px; border: 1px solid #80664d; border-radius: 5px; background: #2a211b; }
-.meta-version-control button { min-width: 45px; height: 26px; padding: 0 7px; border: 0; border-radius: 3px; color: #d2c2aa; background: transparent; font-size: 10px; font-weight: 900; }
-.meta-version-control button.active.current { color: #173b2c; background: #76d19b; }
-.meta-version-control button.active.legacy { color: #fff1ec; background: #bd4a42; }
+.meta-version-select { height: 32px; display: block; border: 1px solid #80664d; border-radius: 5px; background: #2a211b; overflow: hidden; }
+.meta-version-select select { height: 100%; min-width: 76px; padding: 0 26px 0 9px; border: 0; outline: 0; color: #f5e7cf; background: transparent; font-size: 11px; font-weight: 900; cursor: pointer; }
+.meta-version-indicator { min-height: 32px; display: inline-flex; align-items: center; padding: 0 9px; border: 1px solid; border-radius: 5px; font-size: 10px; font-weight: 900; white-space: nowrap; }
+.meta-version-indicator.current { color: #c6f4d7; border-color: #36765d; background: #214e3d; }
+.meta-version-indicator.legacy { color: #ffe0dc; border-color: #a95048; background: #702f2c; }
 .header-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
 .icon-button { width: 36px; height: 36px; display: inline-grid; place-items: center; border: 1px solid rgba(53,43,34,.28); border-radius: 5px; color: var(--ink); background: var(--paper); }
 .icon-button svg { width: 18px; height: 18px; stroke-width: 2.5; }
@@ -446,8 +446,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .sync-button { width: 34px; height: 34px; padding: 0; justify-content: center; }
   .status-strip { height: 31px; padding: 0 12px; }
   .dataset-version { display: none; }
-  .meta-version-warning { display: none; }
-  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .meta-version-warning { display: block; max-width: 190px; padding-left: 7px; border-left: 2px solid #e5655a; color: #ffd0cb; font-size: 10px; line-height: 1.25; }
   .mobile-tabs { height: 60px; display: grid; grid-template-columns: repeat(3, 1fr); position: sticky; top: var(--mobile-header-height, 0px); z-index: 15; background: var(--brown-dark); border-bottom: 2px solid #493328; box-shadow: 0 3px 8px rgba(45,30,20,.22); }
   .mobile-tabs button { display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-right: 1px solid #4c3529; color: #f2dfc2; background: transparent; font-size: 14px; font-weight: 900; }
   .mobile-tabs button:last-child { border-right: 0; }
@@ -502,7 +500,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .brand strong { font-size: 14px; }
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .site-nav a { width: 34px; justify-content: center; padding: 0; }
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .site-nav a span { display: none; }
-  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .meta-version-control button { min-width: 39px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .meta-version-select select { min-width: 68px; }
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .mode-control button { min-width: 54px; }
   .status-strip { justify-content: center; font-size: 10px; }
   .section-heading { min-height: 49px; }
@@ -531,6 +529,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .reference-title { width: 100%; }
   .reference-search { flex: 1 1 190px; }
   .reference-immortal-filter { flex: 1 1 100%; }
+  .reference-toolbar .meta-version-status { flex: 1 1 100%; }
   .reference-mode { flex: 0 0 auto; }
   .reference-mode button { min-width: 48px; }
   .reference-shell .app-header, .tool-shell .app-header { min-height: 112px; height: auto; display: flex; flex-wrap: wrap; align-content: center; gap: 5px 8px; padding: 7px 10px; }
@@ -587,6 +586,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .app-header { --mobile-header-height: 152px; height: var(--mobile-header-height); }
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .header-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .meta-version-status { grid-column: 1 / -1; }
+  .meta-version-status { gap: 5px; }
+  .meta-version-select select { min-width: 66px; }
+  .meta-version-indicator { padding: 0 7px; font-size: 9px; }
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .mode-control { justify-self: start; }
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .sync-button { justify-self: end; }
   .mobile-tabs button { gap: 5px; font-size: 12px; }

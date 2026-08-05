@@ -65,10 +65,13 @@ export function RunesReference() {
         <label className="search-field reference-search"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search runes or remarks" /></label>
         <label className="reference-immortal-filter"><span>Highlight</span><select value={immortalFilter} onChange={(event) => setFocusedImmortal(event.target.value)}><option value="">No Immortal</option>{DATA.immortals.map((immortal) => <option key={immortal.id} value={immortal.id}>{immortal.name}</option>)}</select></label>
         <div className="meta-version-status">
-          {metaVersion !== LATEST_META_VERSION && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
-          <nav className="meta-version-control" aria-label="Rune meta version">
-            {META_VERSIONS.map((version) => <button key={version} className={metaVersion === version ? `active ${version === LATEST_META_VERSION ? "current" : "legacy"}` : ""} onClick={() => setMetaVersion(version)}>v{version}</button>)}
-          </nav>
+          <label className="meta-version-select">
+            <span className="visually-hidden">Rune meta version</span>
+            <select value={metaVersion} onChange={(event) => setMetaVersion(event.target.value as MetaVersion)}>
+              {META_VERSIONS.map((version) => <option key={version} value={version}>v{version}</option>)}
+            </select>
+          </label>
+          <span className={`meta-version-indicator ${metaVersion === LATEST_META_VERSION ? "current" : "legacy"}`} role="status">Current: v{metaVersion}{metaVersion === LATEST_META_VERSION ? " (latest)" : " (older)"}</span>
         </div>
         <nav className="reference-mode" aria-label="Rating mode">
           {modes.map((item) => <button key={item.id} className={mode === item.id ? "active" : ""} onClick={() => setMode(item.id)}>{item.label}</button>)}

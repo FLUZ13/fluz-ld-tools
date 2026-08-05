@@ -12,7 +12,7 @@ import { RunesReference } from "./components/RunesReference";
 import { SyncDialog } from "./components/SyncDialog";
 import { useBuilderStore } from "./hooks/useBuilderStore";
 import { optimizeAssignments } from "./lib/optimizer";
-import { DATA, LATEST_META_VERSION, META_VERSIONS, countOwnedRunes, type GameMode } from "./model";
+import { DATA, LATEST_META_VERSION, META_VERSIONS, countOwnedRunes, type GameMode, type MetaVersion } from "./model";
 
 type MobileTab = "inventory" | "roster" | "results";
 
@@ -113,10 +113,13 @@ function BuilderApp() {
         <PageNavigation active="builder" />
         <div className="header-actions">
           <div className="meta-version-status">
-            {store.state.metaVersion !== LATEST_META_VERSION && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
-            <nav className="meta-version-control" aria-label="Rune meta version">
-              {META_VERSIONS.map((version) => <button key={version} className={store.state.metaVersion === version ? `active ${version === LATEST_META_VERSION ? "current" : "legacy"}` : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = version; draft.metaVersionHasBeenSelected = true; })}>v{version}</button>)}
-            </nav>
+            <label className="meta-version-select">
+              <span className="visually-hidden">Rune meta version</span>
+              <select value={store.state.metaVersion} onChange={(event) => store.mutate((draft) => { draft.metaVersion = event.target.value as MetaVersion; draft.metaVersionHasBeenSelected = true; })}>
+                {META_VERSIONS.map((version) => <option key={version} value={version}>v{version}</option>)}
+              </select>
+            </label>
+            <span className={`meta-version-indicator ${store.state.metaVersion === LATEST_META_VERSION ? "current" : "legacy"}`} role="status">Current: v{store.state.metaVersion}{store.state.metaVersion === LATEST_META_VERSION ? " (latest)" : " (older)"}</span>
           </div>
           <nav className="mode-control" aria-label="Game mode">{modes.map((mode) => <button key={mode.id} className={store.state.mode === mode.id ? "active" : ""} onClick={() => store.mutate((draft) => { draft.mode = mode.id; })}>{mode.label}</button>)}</nav>
           <button className="icon-button" onClick={store.undo} disabled={!store.canUndo} title="Undo" aria-label="Undo"><Undo2 /></button>

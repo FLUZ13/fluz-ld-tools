@@ -57,6 +57,7 @@ export function parseBackup(text: string): BuilderState {
   }));
   const mode = modes.has(raw.mode as GameMode) ? raw.mode as GameMode : "pve";
   const metaVersion: MetaVersion = META_VERSIONS.includes(raw.metaVersion as MetaVersion) ? raw.metaVersion as MetaVersion : "1.0";
+  const metaVersionHasBeenSelected = raw.metaVersionHasBeenSelected === true;
   return migrateBuilderState({
     schemaVersion: 1,
     inventory,
@@ -65,6 +66,7 @@ export function parseBackup(text: string): BuilderState {
     immortalLevels,
     mode,
     metaVersion,
+    metaVersionHasBeenSelected,
     updatedAt: new Date().toISOString(),
   });
 }

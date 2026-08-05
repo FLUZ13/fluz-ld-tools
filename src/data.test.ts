@@ -89,6 +89,14 @@ describe("game data snapshot", () => {
     legacy.selectedImmortalIds = legacy.selectedImmortalIds.filter((id) => id !== "ghost-ninja");
     expect(migrateBuilderState(legacy).selectedImmortalIds).not.toContain("ace-bat-man-batter");
     expect(migrateBuilderState(legacy).selectedImmortalIds).not.toContain("knight-lancelot");
-    expect(migrateBuilderState({ ...legacy, metaVersion: undefined as never }).metaVersion).toBe("1.0");
+    expect(migrateBuilderState({ ...legacy, metaVersion: undefined as never, metaVersionHasBeenSelected: true }).metaVersion).toBe("1.4");
+  });
+
+  it("upgrades saved default workspaces to v1.4 while retaining explicit historical selections", () => {
+    const savedDefault = { ...createDefaultState(), metaVersion: "1.3" as const, metaVersionHasBeenSelected: false };
+    expect(migrateBuilderState(savedDefault).metaVersion).toBe("1.4");
+
+    const explicitLegacy = { ...createDefaultState(), metaVersion: "1.2" as const, metaVersionHasBeenSelected: true };
+    expect(migrateBuilderState(explicitLegacy).metaVersion).toBe("1.2");
   });
 });

@@ -38,6 +38,7 @@ export interface BuilderState {
   immortalLevels: Record<string, number>;
   mode: GameMode;
   metaVersion: MetaVersion;
+  metaVersionHasBeenSelected: boolean;
   updatedAt: string;
 }
 
@@ -104,6 +105,7 @@ export const createDefaultState = (): BuilderState => ({
   immortalLevels: Object.fromEntries(DATA.immortals.filter((immortal) => immortal.limitBreak).map((immortal) => [immortal.id, 15])),
   mode: "pve",
   metaVersion: LATEST_META_VERSION,
+  metaVersionHasBeenSelected: false,
   updatedAt: new Date().toISOString(),
 });
 
@@ -114,22 +116,27 @@ export const countOwnedRunes = (state: BuilderState) =>
   );
 
 export function migrateBuilderState(state: BuilderState): BuilderState {
-  // Existing anonymous workspaces keep the recommendation snapshot they had.
   const immortalIds = new Set(DATA.immortals.map((immortal) => immortal.id));
   const favoriteImmortalIds = Array.isArray(state.favoriteImmortalIds)
     ? [...new Set(state.favoriteImmortalIds.filter((id) => immortalIds.has(id)))]
     : [];
   const { lockedAssignments: _legacyLocks, ...withoutLegacyLocks } = state as BuilderState & { lockedAssignments?: unknown };
-  const metaVersion = META_VERSIONS.includes(state.metaVersion) ? state.metaVersion : "1.0";
+  const metaVersionHasBeenSelected = (state as BuilderState & { metaVersionHasBeenSelected?: unknown }).metaVersionHasBeenSelected === true;
+  const metaVersion = metaVersionHasBeenSelected && META_VERSIONS.includes(state.metaVersion)
+    ? state.metaVersion
+    : LATEST_META_VERSION;
   const rawLevels = state.immortalLevels && typeof state.immortalLevels === "object" ? state.immortalLevels : {};
   const immortalLevels = Object.fromEntries(DATA.immortals.filter((immortal) => immortal.limitBreak).map((immortal) => {
     const level = Number(rawLevels[immortal.id]);
     return [immortal.id, Number.isFinite(level) ? Math.max(15, Math.min(25, Math.floor(level))) : 15];
   }));
-  const versioned = { ...withoutLegacyLocks, favoriteImmortalIds, immortalLevels, metaVersion };
+  const versioned = { ...withoutLegacyLocks, favoriteImmortalIds, immortalLevels, metaVersion, metaVersionHasBeenSelected };
   const addedForms = ["ace-bat-man-batter", "knight-lancelot"];
   const selected = new Set(versioned.selectedImmortalIds.filter((id) => immortalIds.has(id)));
-  let changed = selected.size !== versioned.selectedImmortalIds.length || DATA.immortals.some((immortal) => immortal.limitBreak && state.immortalLevels?.[immortal.id] !== immortalLevels[immortal.id]);
+  let changed = selected.size !== versioned.selectedImmortalIds.length
+    || state.metaVersion !== metaVersion
+    || state.metaVersionHasBeenSelected !== metaVersionHasBeenSelected
+    || DATA.immortals.some((immortal) => immortal.limitBreak && state.immortalLevels?.[immortal.id] !== immortalLevels[immortal.id]);
 
   for (const [index, addedFormId] of addedForms.entries()) {
     if (selected.has(addedFormId)) continue;

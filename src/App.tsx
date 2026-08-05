@@ -74,10 +74,17 @@ function LandingPage() {
   return (
     <div className="app-shell landing-shell">
       <main className="landing-page">
+        <div className="landing-artwork" aria-hidden="true">
+          <img className="landing-character landing-character-left" src="/assets/home/bamba.png" alt="" />
+          <img className="landing-character landing-character-right" src="/assets/home/bandit.png" alt="" />
+        </div>
         <div className="landing-content">
           <header className="landing-branding">
             <img src="/assets/ui/rune-smith.png" alt="" />
-            <div><span>FLUZ Tools</span><h1>Lucky Defense Tools</h1></div>
+            <div>
+              <img className="landing-title-banner" src="/assets/home/lucky-defense-title.png" alt="Lucky Defense" />
+              <span>FLUZ Tools</span><h1>Lucky Defense Tools</h1>
+            </div>
           </header>
           <section className="landing-actions" aria-label="Choose a tool">
             {tools.map(({ href, label, icon: Icon, className }) => <a key={href} className={`landing-action landing-action-${className}`} href={href}><Icon /><strong>{label}</strong><ArrowRight aria-hidden="true" /></a>)}

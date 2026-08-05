@@ -330,6 +330,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .interactive-grid button.drop-target { border-color: #15989a; box-shadow: inset 0 0 0 2px rgba(21, 152, 154, .35); }
 .interactive-grid button > span { position: absolute; top: 2px; left: 4px; font-size: 8px; opacity: .5; }
 .interactive-grid img { width: 90%; height: 90%; object-fit: contain; filter: drop-shadow(0 2px 1px rgba(53,43,34,.3)); }
+.interactive-grid .board-guardian-crop-15009 { transform: scale(1.32); transform-origin: center 61%; }
+.interactive-grid .board-guardian-crop-15011 { transform: scale(1.24); transform-origin: center 60%; }
+.interactive-grid .board-guardian-crop-15014 { transform: scale(1.34); transform-origin: center 62%; }
+.interactive-grid .board-guardian-crop-15019 { transform: scale(1.32); transform-origin: center 60%; }
 .saved-empty { padding: 34px 18px; color: #806c56; text-align: center; font-size: 11px; }
 .saved-board-list { max-height: calc(100vh - 280px); overflow: auto; }
 .saved-board-list article { min-height: 58px; display: grid; grid-template-columns: minmax(0, 1fr) 34px; align-items: center; gap: 5px; padding: 6px 8px; border-bottom: 1px solid #b9a183; }

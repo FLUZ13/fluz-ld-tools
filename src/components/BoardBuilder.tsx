@@ -287,7 +287,7 @@ export function BoardBuilder() {
                         setDropTarget(null);
                       }}
                       title={guardian ? `${guardian.name}. Drag to move or click to remove.` : `Empty slot ${slot + 1}. Drag a guardian here.`}>
-                      <span>{slot + 1}</span>{guardian && <img src={guardian.image} alt={guardian.name} />}
+                      <span>{slot + 1}</span>{guardian && <img className={`board-guardian-crop-${guardian.id}`} src={guardian.image} alt={guardian.name} />}
                     </button>;
                   })}</div>
                 </div>

@@ -63,6 +63,10 @@ export function Results({ state, recommendations }: ResultsProps) {
                   })}
                 </div>
                 <details className="rune-alternatives"><summary>Alternative runes</summary>{alternatives.length > 0 ? <ul>{alternatives.map((alternative) => <li key={alternative.rune.id}><img src={alternative.rune.image} alt="" /><span>{alternative.rune.name.replace("Rune of ", "")}</span><em className={`tier-label tier-${alternative.tier}`}>{TIER_NAMES[alternative.tier]}</em><FitMeter score={alternative.score} /></li>)}</ul> : <p>No other owned runes have a Good rating or higher.</p>}</details>
+                <a className="best-in-slot-link" href={`/runes?immortal=${encodeURIComponent(immortal.id)}`}>
+                  <span>Best in Slot Rune</span>
+                  <strong>{immortal.name}</strong>
+                </a>
               </article>
             );
           })}

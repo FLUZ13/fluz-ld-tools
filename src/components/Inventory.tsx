@@ -2,6 +2,7 @@ import { FileDown, FileUp, Minus, Plus, ScanLine, Search, Trash2 } from "lucide-
 import { useMemo, useRef, useState } from "react";
 import { DATA, TIERS, TIER_NAMES, type BuilderState, type RuneTier } from "../model";
 import { InventoryScanDialog } from "./InventoryScanDialog";
+import { Modal } from "./Modal";
 
 interface InventoryProps {
   state: BuilderState;
@@ -15,6 +16,7 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
   const [ownedOnly, setOwnedOnly] = useState(false);
   const [backupMessage, setBackupMessage] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [backupPrompt, setBackupPrompt] = useState<"save" | "load" | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const filtered = useMemo(() => DATA.runes.filter((rune) => {
     const matches = rune.name.toLowerCase().includes(query.toLowerCase());
@@ -45,8 +47,8 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
         <div><span className="step-number">1</span><h2 id="inventory-title">Your runes</h2></div>
         <div className="heading-actions inventory-actions">
           <button className="text-button" onClick={() => setScannerOpen(true)} title="Read runes from screenshots"><ScanLine /><span>Scan screenshots</span></button>
-          <button className="text-button" onClick={onExport} title="Save a local backup file"><FileDown /><span>Save file</span></button>
-          <button className="text-button" onClick={() => fileInput.current?.click()} title="Load a local backup file"><FileUp /><span>Load file</span></button>
+          <button className="text-button" onClick={() => setBackupPrompt("save")} title="Save a local backup file"><FileDown /><span>Save file</span></button>
+          <button className="text-button" onClick={() => setBackupPrompt("load")} title="Load a local backup file"><FileUp /><span>Load file</span></button>
           <input ref={fileInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => { void loadFile(event.target.files?.[0]); }} />
           <button className="icon-button quiet" onClick={() => mutate((draft) => { draft.inventory = {}; })} title="Clear inventory" aria-label="Clear inventory"><Trash2 /></button>
         </div>
@@ -91,6 +93,16 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
         ))}
       </div>
       {scannerOpen && <InventoryScanDialog state={state} mutate={mutate} onClose={() => setScannerOpen(false)} />}
+      {backupPrompt && <Modal title={backupPrompt === "save" ? "Save a personal backup" : "Load a personal backup"} onClose={() => setBackupPrompt(null)}>
+        <p className="backup-prompt-copy">Your runes are saved automatically in this browser. A file is only needed as a personal backup in case you want an extra copy.</p>
+        {backupPrompt === "load" && <p className="backup-prompt-copy">Loading a file replaces the inventory currently shown in the Builder.</p>}
+        <div className="button-row">
+          <button className="secondary-button" onClick={() => setBackupPrompt(null)}>Cancel</button>
+          <button className="primary-button" onClick={() => { if (backupPrompt === "save") onExport(); else fileInput.current?.click(); setBackupPrompt(null); }}>
+            {backupPrompt === "save" ? <><FileDown />Save backup</> : <><FileUp />Choose backup file</>}
+          </button>
+        </div>
+      </Modal>}
     </section>
   );
 }

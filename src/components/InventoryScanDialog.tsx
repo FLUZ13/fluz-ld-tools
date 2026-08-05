@@ -1,4 +1,4 @@
-import { ImageUp, LoaderCircle, Minus, Plus, ScanLine, Trash2, TriangleAlert, Upload } from "lucide-react";
+import { ImageUp, LoaderCircle, LockKeyhole, Minus, Plus, ScanLine, Trash2, TriangleAlert, Unlock, Upload } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { DATA, TIER_NAMES, type BuilderState, type RuneTier } from "../model";
 import { Modal } from "./Modal";
@@ -33,6 +33,8 @@ export function InventoryScanDialog({ state, mutate, onClose }: InventoryScanDia
   const [progress, setProgress] = useState<{ completed: number; total: number } | null>(null);
   const [message, setMessage] = useState("");
   const [editing, setEditing] = useState<Record<string, number>>({});
+  const [cropUnlocked, setCropUnlocked] = useState(false);
+  const [unlockConfirm, setUnlockConfirm] = useState(false);
 
   const templates = useMemo(() => DATA.runes.map((rune) => ({ id: rune.id, image: rune.image })), []);
   const activeImages = images ?? [];
@@ -105,9 +107,10 @@ export function InventoryScanDialog({ state, mutate, onClose }: InventoryScanDia
         <input ref={inputRef} className="visually-hidden" type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={(event) => { void selectFiles(Array.from(event.target.files ?? [])); event.target.value = ""; }} />
         {files.length > 0 && <div className="scanner-file-list">{files.map((item) => <figure key={item.id} className="scanner-file-preview"><div className="scanner-preview-image"><img src={item.preview} alt="Selected screenshot preview" /><i className="scanner-scan-window" style={{ top: `${crop.top * 100}%`, bottom: `${(1 - crop.bottom) * 100}%` }} /></div><figcaption><span>{item.file.name}</span><button className="icon-button quiet" onClick={() => setFiles((current) => { const removed = current.find((entry) => entry.id === item.id); if (removed) URL.revokeObjectURL(removed.preview); return current.filter((entry) => entry.id !== item.id); })} title="Remove this screenshot" aria-label={`Remove ${item.file.name}`}><Trash2 /></button></figcaption></figure>)}</div>}
         <div className="scanner-crop-controls">
-          <div><strong>Scan area</strong><span>Adjust only when the automatic lower-grid scan misses the inventory.</span></div>
-          <label>Start at {Math.round(crop.top * 100)}%<input type="range" min="10" max="55" value={Math.round(crop.top * 100)} onChange={(event) => setCrop((value) => ({ ...value, top: Math.min(value.bottom - .15, Number(event.target.value) / 100) }))} /></label>
-          <label>End at {Math.round(crop.bottom * 100)}%<input type="range" min="60" max="99" value={Math.round(crop.bottom * 100)} onChange={(event) => setCrop((value) => ({ ...value, bottom: Math.max(value.top + .15, Number(event.target.value) / 100) }))} /></label>
+          <div><strong>Scan area</strong><span>{cropUnlocked ? "Custom scan area enabled for this review." : "Locked to the tested 24%–94% range."}</span></div>
+          <label>Start at {Math.round(crop.top * 100)}%<input disabled={!cropUnlocked} type="range" min="10" max="55" value={Math.round(crop.top * 100)} onChange={(event) => setCrop((value) => ({ ...value, top: Math.min(value.bottom - .15, Number(event.target.value) / 100) }))} /></label>
+          <label>End at {Math.round(crop.bottom * 100)}%<input disabled={!cropUnlocked} type="range" min="60" max="99" value={Math.round(crop.bottom * 100)} onChange={(event) => setCrop((value) => ({ ...value, bottom: Math.max(value.top + .15, Number(event.target.value) / 100) }))} /></label>
+          <div className="scanner-unlock-row">{cropUnlocked ? <button className="text-button" onClick={() => { setCrop(initialCrop); setCropUnlocked(false); setUnlockConfirm(false); }}><LockKeyhole />Lock tested settings</button> : unlockConfirm ? <><span>Unlock custom crop controls for this scan?</span><button className="secondary-button" onClick={() => setUnlockConfirm(false)}>Cancel</button><button className="primary-button" onClick={() => { setCropUnlocked(true); setUnlockConfirm(false); }}><Unlock />Yes, unlock</button></> : <button className="text-button" onClick={() => setUnlockConfirm(true)}><LockKeyhole />Unlock scan area</button>}</div>
         </div>
         <div className="scanner-note"><TriangleAlert /><span>Pop-ups, Merge screenshots, or overlapping scroll rows are not reliable. The review will leave uncertain tiles out instead of guessing.</span></div>
         {message && <p className="form-error">{message}</p>}

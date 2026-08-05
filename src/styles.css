@@ -249,6 +249,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .scanner-crop-controls span { color: #7a644e; font-size: 9px; text-align: right; }
 .scanner-crop-controls label { display: grid; gap: 4px; color: #644d3b; font-size: 10px; font-weight: 900; }
 .scanner-crop-controls input { width: 100%; accent-color: #217d79; }
+.scanner-crop-controls input:disabled { cursor: not-allowed; filter: grayscale(.7); opacity: .55; }
+.scanner-unlock-row { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: 7px; min-height: 29px; color: #684f3c; font-size: 10px; font-weight: 800; }
+.scanner-unlock-row .text-button, .scanner-unlock-row .primary-button, .scanner-unlock-row .secondary-button { min-height: 28px; margin: 0; padding: 0 8px; font-size: 10px; }
+.scanner-unlock-row .text-button svg, .scanner-unlock-row .primary-button svg { width: 14px; height: 14px; }
+.backup-prompt-copy { margin: 0 0 10px; color: #5d4b3b; font-size: 12px; line-height: 1.45; }
 .scanner-note { display: flex; align-items: flex-start; gap: 7px; padding: 9px 10px; border-left: 3px solid #d49130; color: #715941; background: #f5e6c8; font-size: 10px; line-height: 1.35; }
 .scanner-note svg { flex: 0 0 auto; width: 16px; height: 16px; color: #b67820; }
 .scanner-result-images { display: grid; gap: 5px; margin-bottom: 12px; }
@@ -570,6 +575,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .modal-backdrop { padding: 8px; }
   .modal-body { padding: 13px; }
   .scanner-crop-controls { grid-template-columns: 1fr; }
+  .scanner-unlock-row { justify-content: flex-start; flex-wrap: wrap; }
   .scanner-review-row { grid-template-columns: 30px minmax(0, 1fr) 84px; }
   .scanner-review-row > span { display: none; }
   .inventory-actions .text-button { width: 34px; justify-content: center; padding: 0; }

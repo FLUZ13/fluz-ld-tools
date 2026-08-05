@@ -29,7 +29,8 @@ function hsv(r: number, g: number, b: number) {
 function colorMatches(r: number, g: number, b: number) {
   const color = hsv(r, g, b);
   return (color.saturation > 0.48 && color.value > 0.38 && color.hue < 80)
-    || (color.saturation > 0.42 && color.value > 0.35 && color.hue > 175 && color.hue < 330);
+    || (color.saturation > 0.42 && color.value > 0.35 && color.hue > 175 && color.hue < 330)
+    || (color.saturation < 0.38 && color.value > 0.48);
 }
 
 function findColorBoxes(bitmap: ImageBitmap, crop: ScanCrop): ScanBox[] {
@@ -52,11 +53,11 @@ function findColorBoxes(bitmap: ImageBitmap, crop: ScanCrop): ScanBox[] {
       const pixel = index * 4;
       if (!colorMatches(pixels[pixel], pixels[pixel + 1], pixels[pixel + 2])) continue;
       const stack = [index]; visited[index] = 1;
-      let minX = x; let maxX = x; let minY = y; let maxY = y; let amount = 0; let hueSum = 0;
+      let minX = x; let maxX = x; let minY = y; let maxY = y; let amount = 0; let hueSum = 0; let saturationSum = 0;
       while (stack.length) {
         const current = stack.pop()!; const cx = current % width; const cy = Math.floor(current / width); const p = current * 4;
         const color = hsv(pixels[p], pixels[p + 1], pixels[p + 2]);
-        amount++; hueSum += color.hue;
+        amount++; hueSum += color.hue; saturationSum += color.saturation;
         minX = Math.min(minX, cx); maxX = Math.max(maxX, cx); minY = Math.min(minY, cy); maxY = Math.max(maxY, cy);
         for (const [nx, ny] of [[cx - 2, cy], [cx + 2, cy], [cx, cy - 2], [cx, cy + 2]]) {
           if (nx < 0 || nx >= width || ny < top || ny >= bottom) continue;
@@ -68,7 +69,7 @@ function findColorBoxes(bitmap: ImageBitmap, crop: ScanCrop): ScanBox[] {
       }
       const boxWidth = maxX - minX + 1; const boxHeight = maxY - minY + 1; const ratio = boxWidth / boxHeight;
       if (amount > 55 && boxWidth >= 20 && boxHeight >= 20 && boxWidth <= 150 && boxHeight <= 150 && ratio > .62 && ratio < 1.38) {
-        boxes.push({ x: minX / scale, y: minY / scale, width: boxWidth / scale, height: boxHeight / scale, hue: hueSum / amount });
+        boxes.push({ x: minX / scale, y: minY / scale, width: boxWidth / scale, height: boxHeight / scale, hue: hueSum / amount, saturation: saturationSum / amount });
       }
     }
   }
@@ -110,13 +111,18 @@ function tileMask(bitmap: ImageBitmap, box: ScanBox) {
 async function scanOne(image: ScanRequest["images"][number], crop: ScanCrop, templates: TemplateMask[]): Promise<ScanImageResult> {
   const bitmap = await createImageBitmap(new Blob([image.bytes]));
   try {
-    const rows = findFiveColumnGrid(findColorBoxes(bitmap, crop));
+    // The equipped-Immortal strip is also a regular row of coloured squares.
+    // Inventory tiles begin lower on every supported Rune screen, so exclude
+    // that strip before reconstructing rows. A final row may contain fewer
+    // than five tiles, and gray Common frames must not invalidate the row.
+    const inventoryBoxes = findColorBoxes(bitmap, crop).filter((box) => box.y >= bitmap.height * .35);
+    const rows = findFiveColumnGrid(inventoryBoxes, 2);
     const warnings: string[] = [];
-    if (!rows.length) warnings.push("No complete five-column rune grid was found. Use a clean Rune-tab screenshot or adjust the scan area.");
+    if (!rows.length) warnings.push("No rune inventory grid was found. Use a clean Rune-tab screenshot or adjust the scan area.");
     const detections: ScanDetection[] = []; let lowerTierCount = 0;
     for (const row of rows) {
       for (const box of row) {
-        const tier = classifyRuneTier(box.hue);
+        const tier = (box.saturation ?? 1) < .32 ? 1 : classifyRuneTier(box.hue);
         if (tier < 3) { lowerTierCount++; continue; }
         const match = matchTemplateMask(tileMask(bitmap, box), templates);
         if (match.confidence < .22) {

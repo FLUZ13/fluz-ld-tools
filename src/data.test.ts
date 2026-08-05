@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import gameData from "./data/game-data.json";
 import { VERIFIED_RUNE_ICONS } from "./data/rune-icons";
 import { DATA, createDefaultState, migrateBuilderState, ratingsFor } from "./model";
 
@@ -16,6 +17,23 @@ describe("game data snapshot", () => {
   });
 
   it("uses the in-game verified icon for every audited rune", () => {
+    const canonicalAssets = [
+      "strength:1001", "magic:1002", "power:1003", "speed:1004", "mana:1005",
+      "recursion:1006", "precision:1007", "slayer:1008", "conqueror:1009", "sprint:1010",
+      "smite:1011", "amplification:1012", "mastery:1013", "bind:1014", "hunter:1015",
+      "penetration:1016", "battle:1017", "focus:1018", "wave:1019", "immortal-resonance:1020",
+      "haste:1022", "absorption:1023", "impact:1026", "chain:1029", "mobility:1031",
+      "rupture:1032", "flurry:1033", "execution:1035", "fortune:1036", "rampant-growth:1038",
+      "barrier:1041", "legion:1042", "accumulation:1043", "focused-aim:1044", "time-reversal:1045",
+      "sealing:1048", "warcry:1049", "gold-furnace:1050", "scatter-shot:1051", "affinity:1052",
+      "immobility:1053", "arcane-flow:1054", "judgement:1055", "lightning:1058", "mana-harvest:1059",
+      "imperfect-spell:1060", "onslaught:1061", "battle-legacy:1062", "bloodlust:1063", "undying-oath:1064",
+      "iron-body:1065", "arcane-power:1066", "inherited-power:1067",
+    ];
+    expect(gameData.runes.map((rune) => `${rune.id}:${rune.assetId}`)).toEqual(canonicalAssets);
+    expect(gameData.runes.map((rune) => rune.image)).toEqual(canonicalAssets.map((entry) => `/assets/runes/${entry.split(":")[1]}.png`));
+    expect(DATA.runes.map((rune) => `${rune.id}:${rune.assetId}`)).toEqual(canonicalAssets);
+    expect(Object.keys(VERIFIED_RUNE_ICONS)).toHaveLength(DATA.runes.length);
     for (const [runeId, icon] of Object.entries(VERIFIED_RUNE_ICONS)) {
       const rune = DATA.runes.find((candidate) => candidate.id === runeId);
       expect(rune).toMatchObject(icon);
@@ -23,6 +41,13 @@ describe("game data snapshot", () => {
     expect(new Set(DATA.runes.map((rune) => rune.image)).size).toBe(DATA.runes.length);
     expect(DATA.runes.find((rune) => rune.id === "execution")?.image).toBe("/assets/runes/1035.png");
     expect(DATA.runes.find((rune) => rune.id === "time-reversal")?.image).toBe("/assets/runes/1045.png");
+    expect(DATA.runes.find((rune) => rune.id === "haste")?.image).toBe("/assets/runes/1022.png");
+    expect(DATA.runes.find((rune) => rune.id === "absorption")?.image).toBe("/assets/runes/1023.png");
+    expect(DATA.runes.find((rune) => rune.id === "impact")?.image).toBe("/assets/runes/1026.png");
+    expect(DATA.runes.find((rune) => rune.id === "chain")?.image).toBe("/assets/runes/1029.png");
+    expect(DATA.runes.find((rune) => rune.id === "mobility")?.image).toBe("/assets/runes/1031.png");
+    expect(DATA.runes.find((rune) => rune.id === "arcane-flow")?.image).toBe("/assets/runes/1054.png");
+    expect(DATA.runes.find((rune) => rune.id === "inherited-power")?.image).toBe("/assets/runes/1067.png");
   });
 
   it("uses the verified Immortal portraits rather than their base-form artwork", () => {

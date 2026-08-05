@@ -446,7 +446,7 @@
     },
     {
       "id": "haste",
-      "assetId": "1021",
+      "assetId": "1022",
       "name": "Rune of Haste",
       "descriptions": {
         "legendary": "ATK +3.5%, Crit Hit: 4% chance to reduce Cooldown by 0.9s",
@@ -464,11 +464,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1021.png"
+      "image": "/assets/runes/1022.png"
     },
     {
       "id": "absorption",
-      "assetId": "1022",
+      "assetId": "1023",
       "name": "Rune of Absorption",
       "descriptions": {
         "legendary": "ATK +3.5%, Crit Hit: 4% chance to restore 4.5 MP",
@@ -486,11 +486,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1022.png"
+      "image": "/assets/runes/1023.png"
     },
     {
       "id": "impact",
-      "assetId": "1023",
+      "assetId": "1026",
       "name": "Rune of Impact",
       "descriptions": {
         "legendary": "ATK +3.5%, Basic ATK: 2% chance to Stun for 0.6s",
@@ -508,11 +508,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1023.png"
+      "image": "/assets/runes/1026.png"
     },
     {
       "id": "chain",
-      "assetId": "1024",
+      "assetId": "1029",
       "name": "Rune of Chain",
       "descriptions": {
         "legendary": "ATK +3.5%, Basic ATK: 5% chance to reduce remaining Cooldown by 2%",
@@ -530,11 +530,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1024.png"
+      "image": "/assets/runes/1029.png"
     },
     {
       "id": "mobility",
-      "assetId": "1025",
+      "assetId": "1031",
       "name": "Rune of Mobility",
       "descriptions": {
         "legendary": "ATK +3.5%, After Moving: ATK SPD +9% for 1.6s",
@@ -552,11 +552,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1025.png"
+      "image": "/assets/runes/1031.png"
     },
     {
       "id": "rupture",
-      "assetId": "1026",
+      "assetId": "1032",
       "name": "Rune of Rupture",
       "descriptions": {
         "legendary": "ATK +3.5%, Skill Hit: 35% chance to deal 4% bonus damage on hit",
@@ -574,11 +574,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1026.png"
+      "image": "/assets/runes/1032.png"
     },
     {
       "id": "flurry",
-      "assetId": "1027",
+      "assetId": "1033",
       "name": "Rune of Flurry",
       "descriptions": {
         "legendary": "ATK +3.5%, Basic ATK: 2.5% chance to trigger an extra hit",
@@ -596,11 +596,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1027.png"
+      "image": "/assets/runes/1033.png"
     },
     {
       "id": "execution",
-      "assetId": "1028",
+      "assetId": "1035",
       "name": "Rune of Execution",
       "descriptions": {
         "legendary": "ATK +3.5%, 1.6% chance to Execute enemies below 3% HP",
@@ -618,11 +618,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1028.png"
+      "image": "/assets/runes/1035.png"
     },
     {
       "id": "fortune",
-      "assetId": "1029",
+      "assetId": "1036",
       "name": "Rune of Fortune",
       "descriptions": {
         "legendary": "ATK +3.5%, Ultimate: 10% chance to gain 1 Luck Stone",
@@ -640,11 +640,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1029.png"
+      "image": "/assets/runes/1036.png"
     },
     {
       "id": "rampant-growth",
-      "assetId": "1030",
+      "assetId": "1038",
       "name": "Rune of Rampant Growth",
       "descriptions": {
         "legendary": "ATK +3.5%, During Wave: ATK +0.4% every 5s",
@@ -662,11 +662,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1030.png"
+      "image": "/assets/runes/1038.png"
     },
     {
       "id": "barrier",
-      "assetId": "1031",
+      "assetId": "1041",
       "name": "Rune of Barrier",
       "descriptions": {
         "legendary": "ATK +3.5%, On Immortal Summon, 30% chance to gain a shield that blocks harmful effects",
@@ -684,11 +684,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1031.png"
+      "image": "/assets/runes/1041.png"
     },
     {
       "id": "legion",
-      "assetId": "1032",
+      "assetId": "1042",
       "name": "Rune of Legion",
       "descriptions": {
         "legendary": "ATK +3.5%, ATK SPD +0.3% for each Immortal Type on my field",
@@ -706,11 +706,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1032.png"
+      "image": "/assets/runes/1042.png"
     },
     {
       "id": "accumulation",
-      "assetId": "1033",
+      "assetId": "1043",
       "name": "Rune of Accumulation",
       "descriptions": {
         "legendary": "ATK +3.5%, Magic DMG +0.18% per wave after being summoned",
@@ -728,11 +728,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1033.png"
+      "image": "/assets/runes/1043.png"
     },
     {
       "id": "focused-aim",
-      "assetId": "1034",
+      "assetId": "1044",
       "name": "Rune of Focused Aim",
       "descriptions": {
         "legendary": "ATK +3.5%, Range -30%, DMG +10%",
@@ -750,11 +750,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1034.png"
+      "image": "/assets/runes/1044.png"
     },
     {
       "id": "time-reversal",
-      "assetId": "1035",
+      "assetId": "1045",
       "name": "Rune of Time Reversal",
       "descriptions": {
         "legendary": "ATK +3.5%, 10% chance to instantly cast the Ultimate again after it ends",
@@ -772,11 +772,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1035.png"
+      "image": "/assets/runes/1045.png"
     },
     {
       "id": "sealing",
-      "assetId": "1036",
+      "assetId": "1048",
       "name": "Rune of Sealing",
       "descriptions": {
         "legendary": "ATK +3.5%, Attack disabled for 14 waves, ATK +10%",
@@ -794,11 +794,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1036.png"
+      "image": "/assets/runes/1048.png"
     },
     {
       "id": "warcry",
-      "assetId": "1037",
+      "assetId": "1049",
       "name": "Rune of Warcry",
       "descriptions": {
         "legendary": "ATK +3.5%, After using an Ultimate, Base ATK +25% for 4s",
@@ -816,11 +816,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1037.png"
+      "image": "/assets/runes/1049.png"
     },
     {
       "id": "gold-furnace",
-      "assetId": "1038",
+      "assetId": "1050",
       "name": "Rune of Gold Furnace",
       "descriptions": {
         "legendary": "ATK +3.5%, On Immortal Summon, Physical DMG + 0.08% for every 500 Gold spent (up to 15%)",
@@ -838,11 +838,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1038.png"
+      "image": "/assets/runes/1050.png"
     },
     {
       "id": "scatter-shot",
-      "assetId": "1039",
+      "assetId": "1051",
       "name": "Rune of Scatter Shot",
       "descriptions": {
         "legendary": "N/A",
@@ -856,11 +856,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1039.png"
+      "image": "/assets/runes/1051.png"
     },
     {
       "id": "affinity",
-      "assetId": "1040",
+      "assetId": "1052",
       "name": "Rune of Affinity",
       "descriptions": {
         "legendary": "N/A",
@@ -874,11 +874,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1040.png"
+      "image": "/assets/runes/1052.png"
     },
     {
       "id": "immobility",
-      "assetId": "1041",
+      "assetId": "1053",
       "name": "Rune of Immobility",
       "descriptions": {
         "legendary": "N/A",
@@ -892,11 +892,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1041.png"
+      "image": "/assets/runes/1053.png"
     },
     {
       "id": "arcane-flow",
-      "assetId": "1042",
+      "assetId": "1054",
       "name": "Rune of Arcane Flow",
       "descriptions": {
         "legendary": "N/A",
@@ -910,11 +910,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1042.png"
+      "image": "/assets/runes/1054.png"
     },
     {
       "id": "judgement",
-      "assetId": "1043",
+      "assetId": "1055",
       "name": "Rune of Judgement",
       "descriptions": {
         "legendary": "N/A",
@@ -928,11 +928,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1043.png"
+      "image": "/assets/runes/1055.png"
     },
     {
       "id": "lightning",
-      "assetId": "1044",
+      "assetId": "1058",
       "name": "Rune of Lightning",
       "descriptions": {
         "legendary": "N/A",
@@ -946,11 +946,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1044.png"
+      "image": "/assets/runes/1058.png"
     },
     {
       "id": "mana-harvest",
-      "assetId": "1045",
+      "assetId": "1059",
       "name": "Rune of Mana Harvest",
       "descriptions": {
         "legendary": "N/A",
@@ -964,11 +964,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1045.png"
+      "image": "/assets/runes/1059.png"
     },
     {
       "id": "imperfect-spell",
-      "assetId": "1046",
+      "assetId": "1060",
       "name": "Rune of Imperfect Spell",
       "descriptions": {
         "legendary": "N/A",
@@ -982,11 +982,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1046.png"
+      "image": "/assets/runes/1060.png"
     },
     {
       "id": "onslaught",
-      "assetId": "1047",
+      "assetId": "1061",
       "name": "Rune of Onslaught",
       "descriptions": {
         "legendary": "N/A",
@@ -1000,11 +1000,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1047.png"
+      "image": "/assets/runes/1061.png"
     },
     {
       "id": "battle-legacy",
-      "assetId": "1048",
+      "assetId": "1062",
       "name": "Rune of Battle Legacy",
       "descriptions": {
         "legendary": "N/A",
@@ -1018,11 +1018,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1048.png"
+      "image": "/assets/runes/1062.png"
     },
     {
       "id": "bloodlust",
-      "assetId": "1049",
+      "assetId": "1063",
       "name": "Rune of Bloodlust",
       "descriptions": {
         "legendary": "N/A",
@@ -1036,11 +1036,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1049.png"
+      "image": "/assets/runes/1063.png"
     },
     {
       "id": "undying-oath",
-      "assetId": "1050",
+      "assetId": "1064",
       "name": "Rune of Undying Oath",
       "descriptions": {
         "legendary": "N/A",
@@ -1054,11 +1054,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1050.png"
+      "image": "/assets/runes/1064.png"
     },
     {
       "id": "iron-body",
-      "assetId": "1051",
+      "assetId": "1065",
       "name": "Rune of Iron Body",
       "descriptions": {
         "legendary": "N/A",
@@ -1072,11 +1072,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1051.png"
+      "image": "/assets/runes/1065.png"
     },
     {
       "id": "arcane-power",
-      "assetId": "1052",
+      "assetId": "1066",
       "name": "Rune of Arcane Power",
       "descriptions": {
         "legendary": "N/A",
@@ -1090,11 +1090,11 @@
         6,
         7
       ],
-      "image": "/assets/runes/1052.png"
+      "image": "/assets/runes/1066.png"
     },
     {
       "id": "inherited-power",
-      "assetId": "1053",
+      "assetId": "1067",
       "name": "Rune of Inherited Power",
       "descriptions": {
         "legendary": "N/A",
@@ -1108,7 +1108,7 @@
         6,
         7
       ],
-      "image": "/assets/runes/1053.png"
+      "image": "/assets/runes/1067.png"
     }
   ],
   "immortals": [

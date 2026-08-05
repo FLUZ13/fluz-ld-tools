@@ -49,6 +49,7 @@ describe("inventory screenshot scanner helpers", () => {
     const noisy = [...row, { x: 360, y: 400, width: 48, height: 48, hue: 20 }, { x: 40, y: 500, width: 90, height: 18, hue: 20 }];
     expect(findFiveColumnGrid(noisy)).toEqual([row]);
     expect(findFiveColumnGrid(noisy.slice(0, 4))).toEqual([]);
+    expect(findFiveColumnGrid(noisy.slice(0, 4), 2)).toEqual([row.slice(0, 4)]);
   });
 
   it("ignores smaller coloured decorations inside a rune tile", () => {
@@ -62,7 +63,7 @@ describe("inventory screenshot scanner helpers", () => {
 
   it("classifies visible frame colors and accepts only a clear icon match", () => {
     expect(classifyRuneTier(275)).toBe(3);
-    expect(classifyRuneTier(52)).toBe(4);
+    expect(classifyRuneTier(40)).toBe(4);
     expect(classifyRuneTier(26)).toBe(5);
     expect(classifyRuneTier(4)).toBe(6);
     const mask = new Uint8Array([1, 1, 0, 0]);

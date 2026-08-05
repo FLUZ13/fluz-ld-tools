@@ -471,21 +471,38 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .reference-search { flex: 1 1 190px; }
   .reference-mode { flex: 0 0 auto; }
   .reference-mode button { min-width: 48px; }
+  .reference-shell .app-header, .tool-shell .app-header { min-height: 112px; height: auto; display: flex; flex-wrap: wrap; align-content: center; gap: 5px 8px; padding: 7px 10px; }
+  .reference-shell .brand, .tool-shell .brand { min-width: 0; flex: 1 1 100%; }
+  .reference-shell .brand img, .tool-shell .brand img { width: 50px; height: 44px; }
+  .reference-shell .brand strong, .tool-shell .brand strong { font-size: 18px; }
+  .reference-shell .brand span, .tool-shell .brand span { display: none; }
+  .reference-shell .site-nav, .tool-shell .site-nav { width: 100%; height: 36px; margin: 0; overflow: hidden; }
+  .reference-shell .site-nav a, .tool-shell .site-nav a { min-width: 0; flex: 1 1 0; gap: 4px; justify-content: center; padding: 0 4px; overflow: hidden; font-size: 10px; }
+  .reference-shell .site-nav a span, .tool-shell .site-nav a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .reference-shell .site-nav svg, .tool-shell .site-nav svg { width: 15px; height: 15px; flex: 0 0 auto; }
   .runes-table-wrap { height: calc(100vh - 316px); }
-  .tool-shell .site-nav { width: 100%; overflow-x: auto; }
-  .tool-shell .site-nav a { flex: 1 0 42px; }
+  .runes-data-table .description-column, .runes-data-table .rank-column, .runes-data-table .remarks-column { display: none; }
+  .runes-data-table, .runes-data-table tbody .rune-name-column { font-size: 9px; }
+  .rune-name-column { width: 148px; min-width: 148px; }
+  .rune-name-column img { width: 32px; height: 32px; }
+  .rune-name-column span { font-size: 10px; }
   .board-toolbar { align-items: stretch; }
   .board-title-input { width: 100%; }
   .select-control, .segmented-control { flex: 1 1 150px; }
   .board-toolbar-actions { display: grid; grid-template-columns: repeat(8, 36px); justify-content: space-between; overflow: visible; }
   .board-toolbar-actions .text-button, .board-toolbar-actions .compact-action { width: 36px; min-width: 36px; padding: 0; justify-content: center; }
   .board-toolbar-actions .text-button span, .board-toolbar-actions .compact-action span { display: none; }
-  .guardian-grid { grid-template-columns: repeat(5, minmax(56px, 1fr)); }
+  .guardian-library > header, .saved-boards-panel > header { min-height: 46px; }
+  .guardian-grid { height: 230px; grid-template-columns: repeat(5, minmax(56px, 1fr)); }
   .board-stage { padding: 8px; }
   .interactive-boards, .interactive-boards.players-2 { min-height: 0; grid-template-columns: 1fr; padding: 24px 10px; }
   .interactive-board { padding: 32px 7px 9px; }
   .interactive-grid { gap: 3px; }
-  .discover-heading { align-items: flex-start; flex-direction: column; }
+  .saved-empty { padding: 22px 18px; }
+  .saved-panel-tip { margin-top: 6px; margin-bottom: 8px; }
+  .discover-heading { min-height: 0; align-items: flex-start; flex-direction: column; gap: 12px; padding: 22px 20px; }
+  .discover-heading h1 { font-size: 25px; }
+  .discover-heading .primary-button { min-height: 42px; }
   .discover-filters { grid-template-columns: 1fr; }
   .discover-grid { grid-template-columns: 1fr; padding: 12px; }
   .calculator-grid { grid-template-columns: 1fr; }

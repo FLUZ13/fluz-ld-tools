@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MAX_SCAN_IMAGE_BYTES, applyScannedInventory, countScannedInventory, deduplicateFiles, scanResultToInventory, validateScanFiles } from "./inventory-scanner";
-import { classifyRuneTier, findFiveColumnGrid, matchTemplateMask } from "./inventory-scanner-vision";
+import { classifyRuneTier, findFiveColumnGrid, matchTemplateMask, normalizeMask } from "./inventory-scanner-vision";
 
 describe("inventory screenshot scanner helpers", () => {
   it("keeps only Builder-supported tiers when composing a scan", () => {
@@ -51,6 +51,15 @@ describe("inventory screenshot scanner helpers", () => {
     expect(findFiveColumnGrid(noisy.slice(0, 4))).toEqual([]);
   });
 
+  it("ignores smaller coloured decorations inside a rune tile", () => {
+    const row = Array.from({ length: 5 }, (_, index) => ({ x: 20 + index * 56, y: 400, width: 48, height: 48, hue: 20 }));
+    const decorations = [
+      { x: 28, y: 408, width: 30, height: 32, hue: 20 },
+      { x: 140, y: 410, width: 31, height: 30, hue: 20 },
+    ];
+    expect(findFiveColumnGrid([...row, ...decorations])).toEqual([row]);
+  });
+
   it("classifies visible frame colors and accepts only a clear icon match", () => {
     expect(classifyRuneTier(275)).toBe(3);
     expect(classifyRuneTier(52)).toBe(4);
@@ -59,5 +68,13 @@ describe("inventory screenshot scanner helpers", () => {
     const mask = new Uint8Array([1, 1, 0, 0]);
     expect(matchTemplateMask(mask, [{ id: "match", mask }, { id: "other", mask: new Uint8Array([0, 0, 1, 1]) }])).toEqual({ id: "match", confidence: 1 });
     expect(matchTemplateMask(mask, [{ id: "weak", mask: new Uint8Array([1, 0, 1, 1]) }]).confidence).toBeLessThan(.5);
+  });
+
+  it("normalizes icon scale and placement before comparison", () => {
+    const small = new Uint8Array(64);
+    small[2 * 8 + 2] = 1; small[2 * 8 + 3] = 1; small[3 * 8 + 2] = 1;
+    const large = new Uint8Array(64);
+    large[4 * 8 + 4] = 1; large[4 * 8 + 5] = 1; large[5 * 8 + 4] = 1;
+    expect(matchTemplateMask(normalizeMask(small), [{ id: "same-shape", mask: normalizeMask(large) }]).confidence).toBeGreaterThan(.8);
   });
 });

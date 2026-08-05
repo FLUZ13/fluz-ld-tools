@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 import type { ScanCrop, ScanDetection, ScanImageResult, ScanResult, ScanTemplate } from "./inventory-scanner";
-import { classifyRuneTier, findFiveColumnGrid, matchTemplateMask, type ScanBox, type TemplateMask } from "./inventory-scanner-vision";
+import { classifyRuneTier, findFiveColumnGrid, matchTemplateMask, normalizeMask, type ScanBox, type TemplateMask } from "./inventory-scanner-vision";
 
 type ScanRequest = {
   type: "scan";
@@ -84,22 +84,27 @@ async function buildTemplates(templates: ScanTemplate[]) {
     const canvas = new OffscreenCanvas(SIZE, SIZE); const context = canvas.getContext("2d", { willReadFrequently: true })!;
     context.drawImage(bitmap, 0, 0, SIZE, SIZE);
     const data = context.getImageData(0, 0, SIZE, SIZE).data; const mask = new Uint8Array(SIZE * SIZE);
-    for (let index = 0; index < mask.length; index++) mask[index] = data[index * 4 + 3] > 100 && data[index * 4] > 180 ? 1 : 0;
-    result.push({ id: template.id, mask });
+    for (let index = 0; index < mask.length; index++) {
+      const r = data[index * 4]; const g = data[index * 4 + 1]; const b = data[index * 4 + 2];
+      mask[index] = data[index * 4 + 3] > 100 && r > 175 && g > 175 && b > 175 && Math.max(r, g, b) - Math.min(r, g, b) < 95 ? 1 : 0;
+    }
+    result.push({ id: template.id, mask: normalizeMask(mask) });
   }
   return result;
 }
 
 function tileMask(bitmap: ImageBitmap, box: ScanBox) {
   const canvas = new OffscreenCanvas(SIZE, SIZE); const context = canvas.getContext("2d", { willReadFrequently: true })!;
-  const inset = Math.min(box.width, box.height) * .17;
+  // The rune symbol sits well inside the coloured frame. Ignoring the frame keeps
+  // its highlights from overpowering the actual white rune icon.
+  const inset = Math.min(box.width, box.height) * .26;
   context.drawImage(bitmap, box.x + inset, box.y + inset, box.width - inset * 2, box.height - inset * 2, 0, 0, SIZE, SIZE);
   const data = context.getImageData(0, 0, SIZE, SIZE).data; const mask = new Uint8Array(SIZE * SIZE);
   for (let index = 0; index < mask.length; index++) {
     const r = data[index * 4]; const g = data[index * 4 + 1]; const b = data[index * 4 + 2];
     mask[index] = r > 175 && g > 175 && b > 175 && Math.max(r, g, b) - Math.min(r, g, b) < 95 ? 1 : 0;
   }
-  return mask;
+  return normalizeMask(mask);
 }
 
 async function scanOne(image: ScanRequest["images"][number], crop: ScanCrop, templates: TemplateMask[]): Promise<ScanImageResult> {

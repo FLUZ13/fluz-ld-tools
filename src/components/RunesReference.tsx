@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DATA, META_VERSIONS, ratingsFor, type GameMode, type ImmortalDefinition, type MetaVersion } from "../model";
 
 const roles: Array<{ id: ImmortalDefinition["role"]; label: string }> = [
@@ -24,10 +24,11 @@ export function RunesReference() {
     return DATA.immortals.some((immortal) => immortal.id === immortalId) ? immortalId : "";
   });
   const ratings = ratingsFor(metaVersion);
+  const tableWrapRef = useRef<HTMLDivElement>(null);
   const groupedImmortals = useMemo(() => roles.map((role) => ({
     ...role,
-    immortals: DATA.immortals.filter((immortal) => immortal.role === role.id && (!immortalFilter || immortal.id === immortalFilter)),
-  })).filter((group) => group.immortals.length > 0), [immortalFilter]);
+    immortals: DATA.immortals.filter((immortal) => immortal.role === role.id),
+  })).filter((group) => group.immortals.length > 0), []);
   const orderedImmortals = groupedImmortals.flatMap((group) => group.immortals);
   const filteredRunes = DATA.runes.filter((rune) => `${rune.name} ${rune.notes} ${rune.tierLabel}`.toLowerCase().includes(query.toLowerCase()));
   const setFocusedImmortal = (immortalId: string) => {
@@ -38,15 +39,31 @@ export function RunesReference() {
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
   };
 
+  useEffect(() => {
+    if (!immortalFilter || !tableWrapRef.current) return;
+    const target = tableWrapRef.current.querySelector<HTMLElement>(`[data-immortal-id="${immortalFilter}"]`);
+    if (!target) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      const tableWrap = tableWrapRef.current;
+      if (!tableWrap) return;
+      tableWrap.scrollTo({
+        left: Math.max(0, target.offsetLeft - (tableWrap.clientWidth - target.offsetWidth) / 2),
+        behavior: "smooth",
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [immortalFilter]);
+
   return (
     <main className="runes-reference">
       <section className="reference-toolbar" aria-labelledby="runes-title">
         <div className="reference-title">
           <img src="/assets/ui/rune-smith.png" alt="" />
-          <div><h1 id="runes-title">Rune data</h1><p>{immortalFilter ? `${DATA.runes.length} runes for ${DATA.immortals.find((immortal) => immortal.id === immortalFilter)?.name}` : `${DATA.runes.length} runes compared across ${DATA.immortals.length} Immortals`}</p></div>
+          <div><h1 id="runes-title">Rune data</h1><p>{DATA.runes.length} runes compared across {DATA.immortals.length} Immortals</p></div>
         </div>
         <label className="search-field reference-search"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search runes or remarks" /></label>
-        <label className="reference-immortal-filter"><span>Immortal</span><select value={immortalFilter} onChange={(event) => setFocusedImmortal(event.target.value)}><option value="">All Immortals</option>{DATA.immortals.map((immortal) => <option key={immortal.id} value={immortal.id}>{immortal.name}</option>)}</select></label>
+        <label className="reference-immortal-filter"><span>Highlight</span><select value={immortalFilter} onChange={(event) => setFocusedImmortal(event.target.value)}><option value="">No Immortal</option>{DATA.immortals.map((immortal) => <option key={immortal.id} value={immortal.id}>{immortal.name}</option>)}</select></label>
         <div className="meta-version-status">
           {metaVersion !== "1.3" && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
           <nav className="meta-version-control" aria-label="Rune meta version">
@@ -59,13 +76,13 @@ export function RunesReference() {
       </section>
 
       <section className="reference-legend" aria-label="Recommendation score legend">
-        <strong>Meta v{metaVersion} recommendation score{immortalFilter ? ` for ${DATA.immortals.find((immortal) => immortal.id === immortalFilter)?.name}` : ""}</strong>
+        <strong>Meta v{metaVersion} recommendation score</strong>
         {scoreLabels.map((label, score) => <span key={label} className={`score-chip score-${score}`}><b>{label}</b><small>{score}/5</small></span>)}
         <span className="legend-note">New Guardian ratings marked provisional</span>
       </section>
 
-      <div className="runes-table-wrap">
-        <table className={`runes-data-table ${immortalFilter ? "focused-immortal-table" : ""}`}>
+      <div ref={tableWrapRef} className="runes-table-wrap">
+        <table className="runes-data-table">
           <thead>
             <tr>
               <th rowSpan={2} className="rune-name-column">Rune</th>
@@ -78,7 +95,7 @@ export function RunesReference() {
             </tr>
             <tr>
               {orderedImmortals.map((immortal) => (
-                <th key={immortal.id} className="immortal-column" title={immortal.name}>
+                <th key={immortal.id} data-immortal-id={immortal.id} className={`immortal-column ${immortal.id === immortalFilter ? "highlighted-immortal" : ""}`} title={immortal.name}>
                   <img src={immortal.image} alt="" />
                   <span>{immortal.name}</span>
                   {immortal.provisional && <i title="Provisional rating">P</i>}
@@ -100,7 +117,7 @@ export function RunesReference() {
                   const score = rating?.[mode];
                   const label = score == null ? "-" : scoreLabels[score] ?? String(score);
                   return (
-                    <td key={immortal.id} className={`rating-cell ${score == null ? "score-null" : `score-${score}`} ${metaVersion === "1.0" && rating?.confidence === "provisional" ? "provisional" : ""}`} title={`${rune.name} on ${immortal.name}: ${score == null ? "not rated" : `${score}/5 (${label})`}`}>
+                    <td key={immortal.id} className={`rating-cell ${score == null ? "score-null" : `score-${score}`} ${metaVersion === "1.0" && rating?.confidence === "provisional" ? "provisional" : ""} ${immortal.id === immortalFilter ? "highlighted-immortal" : ""}`} title={`${rune.name} on ${immortal.name}: ${score == null ? "not rated" : `${score}/5 (${label})`}`}>
                       <span>{label}</span>
                     </td>
                   );

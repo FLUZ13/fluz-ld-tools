@@ -40,7 +40,7 @@ describe("game data snapshot", () => {
   });
 
   it("has valid three-mode ratings for every rune and Immortal in every meta version", () => {
-    for (const metaVersion of ["1.0", "1.1", "1.2", "1.3"] as const) {
+    for (const metaVersion of ["1.0", "1.1", "1.2", "1.3", "1.4"] as const) {
       const ratings = ratingsFor(metaVersion);
       for (const rune of DATA.runes) {
         for (const immortal of DATA.immortals) {
@@ -61,13 +61,22 @@ describe("game data snapshot", () => {
     expect(ratingsFor("1.1").mana["i-am-meow"].pve).toBe(5);
   });
 
-  it("preserves historical snapshots and applies the post-patch v1.3 audit", () => {
+  it("preserves historical snapshots and applies the post-patch meta audits", () => {
     expect(ratingsFor("1.1").magic["knight-lancelot"].pve).toBeNull();
     expect(ratingsFor("1.2").magic["knight-lancelot"].pve).toBe(5);
     expect(ratingsFor("1.1").magic["giga-chad"].pve).toBe(2);
     expect(ratingsFor("1.3").magic["giga-chad"].pve).toBe(0);
     expect(ratingsFor("1.3")["focused-aim"]["azure-dragon-taoist"].pve).toBe(0);
-    expect(createDefaultState().metaVersion).toBe("1.3");
+    expect(ratingsFor("1.3").smite["dr-pulse"].pve).toBeNull();
+    expect(ratingsFor("1.4").smite["dr-pulse"].pve).toBe(5);
+    expect(createDefaultState().metaVersion).toBe("1.4");
+  });
+
+  it("marks the known Limit Break roster and defaults it to level 15", () => {
+    const state = createDefaultState();
+    expect(DATA.immortals.filter((immortal) => immortal.limitBreak)).toHaveLength(9);
+    expect(state.immortalLevels["awakened-hailey"]).toBe(15);
+    expect(state.immortalLevels["dr-pulse"]).toBeUndefined();
   });
 
   it("keeps legacy all-selected rosters complete after adding a form", () => {

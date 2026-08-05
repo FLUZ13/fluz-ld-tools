@@ -143,6 +143,13 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .selected-mark { position: absolute; right: -4px; bottom: -3px; width: 19px; height: 19px; padding: 2px; color: #fff; background: #188b78; border: 2px solid #f5ead6; border-radius: 50%; }
 .immortal-toggle > span:nth-child(2) { width: 100%; min-height: 25px; display: grid; place-items: center; overflow-wrap: anywhere; font-size: 10px; font-weight: 900; line-height: 1.15; }
 .immortal-toggle small { color: #a94a38; font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.limit-break-control { position: absolute; right: 4px; bottom: 4px; z-index: 3; display: flex; align-items: center; overflow: hidden; height: 19px; border: 1px solid #7b3395; border-radius: 3px; color: #fff; background: #a84dc1; box-shadow: 0 1px 1px rgba(53,43,34,.22); font-size: 8px; font-weight: 900; }
+.limit-break-control span { min-width: 42px; padding: 0 3px; text-align: center; white-space: nowrap; }
+.limit-break-control span b { font-size: 8px; }
+.limit-break-control button { width: 17px; height: 17px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 0; color: #fff; background: rgba(65, 20, 84, .3); }
+.limit-break-control button:hover:not(:disabled) { background: rgba(65, 20, 84, .56); }
+.limit-break-control button:disabled { opacity: .35; cursor: not-allowed; }
+.limit-break-control svg { width: 10px; height: 10px; }
 
 .results-section { background: #cdb99c; }
 .results-list { height: calc(100vh - 164px); overflow: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 10px; padding: 10px; }

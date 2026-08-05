@@ -50,6 +50,11 @@ export function parseBackup(text: string): BuilderState {
   const favoriteImmortalIds = Array.isArray(raw.favoriteImmortalIds)
     ? [...new Set(raw.favoriteImmortalIds.filter((id: unknown): id is string => typeof id === "string" && immortalIds.has(id)))]
     : [];
+  const rawLevels = raw.immortalLevels && typeof raw.immortalLevels === "object" ? raw.immortalLevels as Record<string, unknown> : {};
+  const immortalLevels = Object.fromEntries(DATA.immortals.filter((immortal) => immortal.limitBreak).map((immortal) => {
+    const level = Number(rawLevels[immortal.id]);
+    return [immortal.id, Number.isFinite(level) ? Math.max(15, Math.min(25, Math.floor(level))) : 15];
+  }));
   const mode = modes.has(raw.mode as GameMode) ? raw.mode as GameMode : "pve";
   const metaVersion: MetaVersion = META_VERSIONS.includes(raw.metaVersion as MetaVersion) ? raw.metaVersion as MetaVersion : "1.0";
   return migrateBuilderState({
@@ -57,6 +62,7 @@ export function parseBackup(text: string): BuilderState {
     inventory,
     selectedImmortalIds,
     favoriteImmortalIds,
+    immortalLevels,
     mode,
     metaVersion,
     updatedAt: new Date().toISOString(),

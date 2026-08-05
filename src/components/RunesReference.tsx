@@ -1,6 +1,6 @@
 import { Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DATA, META_VERSIONS, ratingsFor, type GameMode, type ImmortalDefinition, type MetaVersion } from "../model";
+import { DATA, LATEST_META_VERSION, META_VERSIONS, ratingsFor, type GameMode, type ImmortalDefinition, type MetaVersion } from "../model";
 
 const roles: Array<{ id: ImmortalDefinition["role"]; label: string }> = [
   { id: "support", label: "Support" },
@@ -17,7 +17,7 @@ const scoreLabels = ["X", "Low", "Maybe", "Good", "Great", "Best"];
 
 export function RunesReference() {
   const [mode, setMode] = useState<GameMode>("pve");
-  const [metaVersion, setMetaVersion] = useState<MetaVersion>("1.3");
+  const [metaVersion, setMetaVersion] = useState<MetaVersion>(LATEST_META_VERSION);
   const [query, setQuery] = useState("");
   const [immortalFilter, setImmortalFilter] = useState(() => {
     const immortalId = new URLSearchParams(window.location.search).get("immortal") ?? "";
@@ -65,9 +65,9 @@ export function RunesReference() {
         <label className="search-field reference-search"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search runes or remarks" /></label>
         <label className="reference-immortal-filter"><span>Highlight</span><select value={immortalFilter} onChange={(event) => setFocusedImmortal(event.target.value)}><option value="">No Immortal</option>{DATA.immortals.map((immortal) => <option key={immortal.id} value={immortal.id}>{immortal.name}</option>)}</select></label>
         <div className="meta-version-status">
-          {metaVersion !== "1.3" && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
+          {metaVersion !== LATEST_META_VERSION && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
           <nav className="meta-version-control" aria-label="Rune meta version">
-            {META_VERSIONS.map((version) => <button key={version} className={metaVersion === version ? `active ${version === "1.3" ? "current" : "legacy"}` : ""} onClick={() => setMetaVersion(version)}>v{version}</button>)}
+            {META_VERSIONS.map((version) => <button key={version} className={metaVersion === version ? `active ${version === LATEST_META_VERSION ? "current" : "legacy"}` : ""} onClick={() => setMetaVersion(version)}>v{version}</button>)}
           </nav>
         </div>
         <nav className="reference-mode" aria-label="Rating mode">

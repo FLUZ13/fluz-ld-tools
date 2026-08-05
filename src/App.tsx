@@ -12,7 +12,7 @@ import { RunesReference } from "./components/RunesReference";
 import { SyncDialog } from "./components/SyncDialog";
 import { useBuilderStore } from "./hooks/useBuilderStore";
 import { optimizeAssignments } from "./lib/optimizer";
-import { DATA, META_VERSIONS, countOwnedRunes, type GameMode } from "./model";
+import { DATA, LATEST_META_VERSION, META_VERSIONS, countOwnedRunes, type GameMode } from "./model";
 
 type MobileTab = "inventory" | "roster" | "results";
 
@@ -113,9 +113,9 @@ function BuilderApp() {
         <PageNavigation active="builder" />
         <div className="header-actions">
           <div className="meta-version-status">
-            {store.state.metaVersion !== "1.3" && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
+            {store.state.metaVersion !== LATEST_META_VERSION && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
             <nav className="meta-version-control" aria-label="Rune meta version">
-              {META_VERSIONS.map((version) => <button key={version} className={store.state.metaVersion === version ? `active ${version === "1.3" ? "current" : "legacy"}` : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = version; })}>v{version}</button>)}
+              {META_VERSIONS.map((version) => <button key={version} className={store.state.metaVersion === version ? `active ${version === LATEST_META_VERSION ? "current" : "legacy"}` : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = version; })}>v{version}</button>)}
             </nav>
           </div>
           <nav className="mode-control" aria-label="Game mode">{modes.map((mode) => <button key={mode.id} className={store.state.mode === mode.id ? "active" : ""} onClick={() => store.mutate((draft) => { draft.mode = mode.id; })}>{mode.label}</button>)}</nav>

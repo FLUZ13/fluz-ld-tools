@@ -9,12 +9,14 @@ describe("local backup files", () => {
     state.mode = "guild";
     state.selectedImmortalIds = ["ghost-ninja"];
     state.favoriteImmortalIds = ["top-vayne"];
+    state.immortalLevels["ghost-ninja"] = 21;
     const restored = parseBackup(serializeBackup(state));
     expect(restored.inventory.strength?.[7]).toBe(2);
     expect(restored.mode).toBe("guild");
-    expect(restored.metaVersion).toBe("1.3");
+    expect(restored.metaVersion).toBe("1.4");
     expect(restored.selectedImmortalIds).toEqual(["ghost-ninja"]);
     expect(restored.favoriteImmortalIds).toEqual(["top-vayne"]);
+    expect(restored.immortalLevels["ghost-ninja"]).toBe(21);
   });
 
   it("drops removed Common and Rare quantities from older files", () => {

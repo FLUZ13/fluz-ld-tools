@@ -2,10 +2,11 @@ import gameData from "./data/game-data.json";
 import { VERIFIED_RUNE_ICONS } from "./data/rune-icons";
 
 export type GameMode = "pve" | "pvp" | "guild";
-export type MetaVersion = "1.0" | "1.1" | "1.2" | "1.3";
+export type MetaVersion = "1.0" | "1.1" | "1.2" | "1.3" | "1.4";
 export type RuneTier = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type Confidence = "source" | "provisional";
-export const META_VERSIONS: MetaVersion[] = ["1.0", "1.1", "1.2", "1.3"];
+export const META_VERSIONS: MetaVersion[] = ["1.0", "1.1", "1.2", "1.3", "1.4"];
+export const LATEST_META_VERSION: MetaVersion = "1.4";
 
 export interface RuneDefinition {
   id: string;
@@ -26,6 +27,7 @@ export interface ImmortalDefinition {
   image: string;
   boardImage: string;
   provisional: boolean;
+  limitBreak: boolean;
 }
 
 export interface BuilderState {
@@ -33,6 +35,7 @@ export interface BuilderState {
   inventory: Record<string, Partial<Record<RuneTier, number>>>;
   selectedImmortalIds: string[];
   favoriteImmortalIds: string[];
+  immortalLevels: Record<string, number>;
   mode: GameMode;
   metaVersion: MetaVersion;
   updatedAt: string;
@@ -98,8 +101,9 @@ export const createDefaultState = (): BuilderState => ({
   inventory: {},
   selectedImmortalIds: DATA.immortals.map((immortal) => immortal.id),
   favoriteImmortalIds: [],
+  immortalLevels: Object.fromEntries(DATA.immortals.filter((immortal) => immortal.limitBreak).map((immortal) => [immortal.id, 15])),
   mode: "pve",
-  metaVersion: "1.3",
+  metaVersion: LATEST_META_VERSION,
   updatedAt: new Date().toISOString(),
 });
 
@@ -117,10 +121,15 @@ export function migrateBuilderState(state: BuilderState): BuilderState {
     : [];
   const { lockedAssignments: _legacyLocks, ...withoutLegacyLocks } = state as BuilderState & { lockedAssignments?: unknown };
   const metaVersion = META_VERSIONS.includes(state.metaVersion) ? state.metaVersion : "1.0";
-  const versioned = { ...withoutLegacyLocks, favoriteImmortalIds, metaVersion };
+  const rawLevels = state.immortalLevels && typeof state.immortalLevels === "object" ? state.immortalLevels : {};
+  const immortalLevels = Object.fromEntries(DATA.immortals.filter((immortal) => immortal.limitBreak).map((immortal) => {
+    const level = Number(rawLevels[immortal.id]);
+    return [immortal.id, Number.isFinite(level) ? Math.max(15, Math.min(25, Math.floor(level))) : 15];
+  }));
+  const versioned = { ...withoutLegacyLocks, favoriteImmortalIds, immortalLevels, metaVersion };
   const addedForms = ["ace-bat-man-batter", "knight-lancelot"];
   const selected = new Set(versioned.selectedImmortalIds.filter((id) => immortalIds.has(id)));
-  let changed = selected.size !== versioned.selectedImmortalIds.length;
+  let changed = selected.size !== versioned.selectedImmortalIds.length || DATA.immortals.some((immortal) => immortal.limitBreak && state.immortalLevels?.[immortal.id] !== immortalLevels[immortal.id]);
 
   for (const [index, addedFormId] of addedForms.entries()) {
     if (selected.has(addedFormId)) continue;

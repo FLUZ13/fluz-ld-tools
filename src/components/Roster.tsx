@@ -1,4 +1,4 @@
-import { Check, CheckCheck, Star, X } from "lucide-react";
+import { Check, CheckCheck, Minus, Plus, Star, X } from "lucide-react";
 import { DATA, type BuilderState } from "../model";
 
 interface RosterProps {
@@ -17,6 +17,10 @@ export function Roster({ state, mutate }: RosterProps) {
   const toggleFavorite = (id: string) => mutate((draft) => {
     if (draft.favoriteImmortalIds.includes(id)) draft.favoriteImmortalIds = draft.favoriteImmortalIds.filter((value) => value !== id);
     else draft.favoriteImmortalIds.push(id);
+  });
+  const changeLevel = (id: string, amount: number) => mutate((draft) => {
+    const current = draft.immortalLevels[id] ?? 15;
+    draft.immortalLevels[id] = Math.max(15, Math.min(25, current + amount));
   });
 
   return (
@@ -47,6 +51,11 @@ export function Roster({ state, mutate }: RosterProps) {
               aria-pressed={favorites.has(immortal.id)}
               title={favorites.has(immortal.id) ? "Remove favorite" : "Favorite"}
             ><Star /></button>
+            {immortal.limitBreak && <div className="limit-break-control" aria-label={`${immortal.name} Limit Break level`}>
+              <button onClick={() => changeLevel(immortal.id, -1)} disabled={(state.immortalLevels[immortal.id] ?? 15) <= 15} aria-label={`Decrease ${immortal.name} level`} title="Decrease Limit Break level"><Minus /></button>
+              <span><b>LB</b> Lv {state.immortalLevels[immortal.id] ?? 15}</span>
+              <button onClick={() => changeLevel(immortal.id, 1)} disabled={(state.immortalLevels[immortal.id] ?? 15) >= 25} aria-label={`Increase ${immortal.name} level`} title="Increase Limit Break level"><Plus /></button>
+            </div>}
           </div>
         ))}
       </div>

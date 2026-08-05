@@ -71,6 +71,13 @@ const baseGuardians: Array<[string, string, GuardianRarity, string?]> = [
   ["5026", "Savior Ray", "mythic"],
 ];
 
+const BOARD_PORTRAIT_OVERRIDES: Record<string, string> = {
+  "15009": "/assets/board/guardians/15109-board-crop.png",
+  "15011": "/assets/board/guardians/1400601-board-crop.png",
+  "15014": "/assets/board/guardians/1501401-board-crop.png",
+  "15019": "/assets/board/guardians/1501901-board-crop.png",
+};
+
 export const BOARD_GUARDIANS: BoardGuardian[] = [
   ...baseGuardians.map(([id, name, rarity, imageId = id]) => ({
     id,
@@ -82,7 +89,7 @@ export const BOARD_GUARDIANS: BoardGuardian[] = [
     id: guardian.assetId,
     name: guardian.name,
     rarity: "immortal" as const,
-    image: guardian.boardImage,
+    image: BOARD_PORTRAIT_OVERRIDES[guardian.assetId] ?? guardian.boardImage,
   })),
 ];
 

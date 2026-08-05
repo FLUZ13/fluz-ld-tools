@@ -35,9 +35,12 @@ export function RunesReference() {
           <div><h1 id="runes-title">Rune data</h1><p>{DATA.runes.length} runes compared across {DATA.immortals.length} Immortals</p></div>
         </div>
         <label className="search-field reference-search"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search runes or remarks" /></label>
-        <nav className="meta-version-control" aria-label="Rune meta version">
-          {META_VERSIONS.map((version) => <button key={version} className={metaVersion === version ? "active" : ""} onClick={() => setMetaVersion(version)}>v{version}</button>)}
-        </nav>
+        <div className="meta-version-status">
+          {metaVersion !== "1.3" && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
+          <nav className="meta-version-control" aria-label="Rune meta version">
+            {META_VERSIONS.map((version) => <button key={version} className={metaVersion === version ? `active ${version === "1.3" ? "current" : "legacy"}` : ""} onClick={() => setMetaVersion(version)}>v{version}</button>)}
+          </nav>
+        </div>
         <nav className="reference-mode" aria-label="Rating mode">
           {modes.map((item) => <button key={item.id} className={mode === item.id ? "active" : ""} onClick={() => setMode(item.id)}>{item.label}</button>)}
         </nav>

@@ -81,9 +81,12 @@ function BuilderApp() {
         <Brand title="LD Rune Builder" />
         <PageNavigation active="builder" />
         <div className="header-actions">
-          <nav className="meta-version-control" aria-label="Rune meta version">
-            {META_VERSIONS.map((version) => <button key={version} className={store.state.metaVersion === version ? "active" : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = version; })}>v{version}</button>)}
-          </nav>
+          <div className="meta-version-status">
+            {store.state.metaVersion !== "1.3" && <span className="meta-version-warning" role="status">You are not using the latest version.</span>}
+            <nav className="meta-version-control" aria-label="Rune meta version">
+              {META_VERSIONS.map((version) => <button key={version} className={store.state.metaVersion === version ? `active ${version === "1.3" ? "current" : "legacy"}` : ""} onClick={() => store.mutate((draft) => { draft.metaVersion = version; })}>v{version}</button>)}
+            </nav>
+          </div>
           <nav className="mode-control" aria-label="Game mode">{modes.map((mode) => <button key={mode.id} className={store.state.mode === mode.id ? "active" : ""} onClick={() => store.mutate((draft) => { draft.mode = mode.id; })}>{mode.label}</button>)}</nav>
           <button className="icon-button" onClick={store.undo} disabled={!store.canUndo} title="Undo" aria-label="Undo"><Undo2 /></button>
           <button className="icon-button" onClick={store.redo} disabled={!store.canRedo} title="Redo" aria-label="Redo"><Redo2 /></button>

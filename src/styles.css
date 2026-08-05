@@ -41,9 +41,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .mode-control { display: flex; align-items: center; height: 38px; background: #181411; border: 1px solid #5b4b3c; border-radius: 6px; padding: 3px; }
 .mode-control button { min-width: 64px; height: 30px; border: 0; border-radius: 4px; color: #bfb3a3; background: transparent; font-weight: 800; }
 .mode-control button.active { color: #2c251f; background: #e6bd58; }
+.meta-version-status { display: flex; align-items: center; gap: 8px; }
+.meta-version-warning { color: #ffd0cb; font-size: 11px; font-weight: 900; white-space: nowrap; }
 .meta-version-control { display: flex; align-items: center; height: 32px; padding: 2px; border: 1px solid #80664d; border-radius: 5px; background: #2a211b; }
 .meta-version-control button { min-width: 45px; height: 26px; padding: 0 7px; border: 0; border-radius: 3px; color: #d2c2aa; background: transparent; font-size: 10px; font-weight: 900; }
-.meta-version-control button.active { color: #2c251f; background: #53bbb4; }
+.meta-version-control button.active.current { color: #173b2c; background: #76d19b; }
+.meta-version-control button.active.legacy { color: #fff1ec; background: #bd4a42; }
 .header-actions { margin-left: auto; display: flex; gap: 6px; align-items: center; }
 .icon-button { width: 36px; height: 36px; display: inline-grid; place-items: center; border: 1px solid rgba(53,43,34,.28); border-radius: 5px; color: var(--ink); background: var(--paper); }
 .icon-button svg { width: 18px; height: 18px; stroke-width: 2.5; }
@@ -403,6 +406,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .sync-button { width: 36px; padding: 0; justify-content: center; }
   .status-strip { height: 31px; padding: 0 12px; }
   .dataset-version { display: none; }
+  .meta-version-warning { display: none; }
   .mobile-tabs { height: 48px; display: grid; grid-template-columns: repeat(3, 1fr); position: sticky; top: 66px; z-index: 15; background: var(--brown-dark); border-bottom: 1px solid #493328; }
   .mobile-tabs button { display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-right: 1px solid #4c3529; color: #ddcbb2; background: transparent; font-weight: 900; }
   .mobile-tabs button.active { color: #342a22; background: #e7c267; }

@@ -393,24 +393,27 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 }
 
 @media (max-width: 960px) {
-  .app-header { height: 66px; padding: 0 10px; gap: 8px; }
-  .brand { min-width: 0; flex: 1; }
-  .brand img { width: 51px; height: 46px; }
-  .brand strong { font-size: 16px; }
-  .brand span { display: none; }
-  .site-nav a { padding: 0 8px; }
-  .mode-control { position: fixed; bottom: 8px; left: 50%; z-index: 50; height: 42px; transform: translateX(-50%); box-shadow: 0 4px 16px rgba(0,0,0,.35); }
-  .mode-control button { min-width: 72px; }
-  .header-actions .icon-button:nth-child(-n+2) { display: none; }
-  .sync-button span { display: none; }
-  .sync-button { width: 36px; padding: 0; justify-content: center; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .app-header { --mobile-header-height: 112px; height: var(--mobile-header-height); flex-wrap: wrap; align-content: center; padding: 7px 10px; gap: 5px 8px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .brand { min-width: 0; flex: 1 1 150px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .brand img { width: 51px; height: 46px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .brand strong { font-size: 16px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .brand span { display: none; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .site-nav a { padding: 0 8px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .header-actions { order: 3; width: 100%; margin-left: 0; justify-content: flex-end; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .mode-control { position: static; height: 34px; transform: none; box-shadow: none; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .mode-control button { min-width: 58px; height: 26px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .header-actions .icon-button { display: none; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .sync-button span { display: none; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .sync-button { width: 34px; height: 34px; padding: 0; justify-content: center; }
   .status-strip { height: 31px; padding: 0 12px; }
   .dataset-version { display: none; }
   .meta-version-warning { display: none; }
-  .mobile-tabs { height: 48px; display: grid; grid-template-columns: repeat(3, 1fr); position: sticky; top: 66px; z-index: 15; background: var(--brown-dark); border-bottom: 1px solid #493328; }
-  .mobile-tabs button { display: flex; align-items: center; justify-content: center; gap: 6px; border: 0; border-right: 1px solid #4c3529; color: #ddcbb2; background: transparent; font-weight: 900; }
-  .mobile-tabs button.active { color: #342a22; background: #e7c267; }
-  .mobile-tabs span { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 4px; color: #fff; background: #4d3d31; font-size: 10px; }
+  .mobile-tabs { height: 60px; display: grid; grid-template-columns: repeat(3, 1fr); position: sticky; top: var(--mobile-header-height, 0px); z-index: 15; background: var(--brown-dark); border-bottom: 2px solid #493328; box-shadow: 0 3px 8px rgba(45,30,20,.22); }
+  .mobile-tabs button { display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-right: 1px solid #4c3529; color: #f2dfc2; background: transparent; font-size: 14px; font-weight: 900; }
+  .mobile-tabs button:last-child { border-right: 0; }
+  .mobile-tabs button.active { color: #342a22; background: #e7c267; box-shadow: inset 0 -4px 0 #b87922; }
+  .mobile-tabs span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 7px; color: #fff; background: #4d3d31; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); font-family: "LD Display", sans-serif; font-size: 14px; }
+  .mobile-tabs button.active span { color: #fff9e9; background: #765033; }
   .builder-layout { display: block; min-height: calc(100vh - 145px); }
   .builder-layout > div { display: none; border: 0; }
   .builder-layout > .inventory-column.mobile-inventory, .builder-layout > .roster-column.mobile-roster, .builder-layout > .results-column.mobile-results { display: block; }
@@ -441,11 +444,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 }
 
 @media (max-width: 560px) {
-  .header-actions { gap: 3px; }
-  .header-actions .icon-button { width: 34px; }
-  .brand strong { font-size: 14px; }
-  .site-nav a { width: 34px; justify-content: center; padding: 0; }
-  .site-nav a span { display: none; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .header-actions { gap: 4px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .brand strong { font-size: 14px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .site-nav a { width: 34px; justify-content: center; padding: 0; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .site-nav a span { display: none; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .meta-version-control button { min-width: 39px; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .mode-control button { min-width: 54px; }
   .status-strip { justify-content: center; font-size: 10px; }
   .section-heading { min-height: 49px; }
   .inventory-section { overflow: hidden; }
@@ -495,4 +499,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .credits-hero { align-items: flex-start; flex-direction: column; }
   .credits-hero h1 { font-size: 25px; }
   .credits-columns { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 420px) {
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .app-header { --mobile-header-height: 152px; height: var(--mobile-header-height); }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .header-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .meta-version-status { grid-column: 1 / -1; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .mode-control { justify-self: start; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .sync-button { justify-self: end; }
+  .mobile-tabs button { gap: 5px; font-size: 12px; }
+  .mobile-tabs span { width: 25px; height: 25px; font-size: 13px; }
 }

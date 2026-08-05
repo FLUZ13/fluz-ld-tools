@@ -95,6 +95,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .text-button { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 8px; border: 0; border-radius: 4px; color: var(--ink); background: transparent; font-size: 12px; font-weight: 800; }
 .text-button:hover { background: rgba(238,224,197,.56); }
 .text-button svg { width: 15px; }
+.scan-label-short { display: none; }
 .quiet { background: rgba(238,224,197,.5); }
 
 .inventory-tools { display: flex; align-items: center; gap: 10px; padding: 5px 10px; background: #c8b294; border-bottom: 1px solid #a68e70; }
@@ -580,6 +581,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .scanner-review-row > span { display: none; }
   .inventory-actions .text-button { width: 34px; justify-content: center; padding: 0; }
   .inventory-actions .text-button span { display: none; }
+  .inventory-actions .scan-action { width: auto; padding: 0 8px; }
+  .inventory-actions .scan-action .scan-label-short { display: inline; }
+  .inventory-actions .scan-action .scan-label-long { display: none; }
   .reference-toolbar { min-height: 126px; display: flex; flex-wrap: wrap; }
   .reference-title { width: 100%; }
   .reference-search { flex: 1 1 190px; }

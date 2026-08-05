@@ -828,7 +828,7 @@
         "immortal": "ATK +6.5%, On Immortal Summon, Physical DMG + 0.16% for every 500 Gold spent (up to 20%)"
       },
       "tierLabel": "S-A",
-      "notes": "Must strategize equipped immortal for late summon\n83.3k gold spent (about 580 summon cost) for max\n\nEnglish, French, German, Spanish version descriptions are ambiguous. The real mechanism here is \"DMG +x% for every 500 Gold to be spent after summon\", so it is now recommended for mid-game immortal summons\n\nMax (+15%/+20% DMG) requirements:\nLegendary: (187.5* 500) = 93,750 Gold spent (~Spamming from 200 - 640 cost)\nMythic: (166.6*500) = 83,333 Gold spent (~Spamming from 200 - 610 cost)\nImmortal: (125*500) = 62,500 Gold spent (~Spamming from 200 - 540 cost)\n\nImportant: This rune will perform poorly in PVP or Guild Raid. Switch this rune out before playing these modes!",
+      "notes": "Late-summon rune. Damage scales with Gold spent after the summon, so it is best for mid-game Immortal summons.\n\nFull cap: Legendary 93,750 Gold; Mythic 83,333 Gold; Immortal 62,500 Gold.\n\nPoor in PvP or Guild Raid. Switch it out before those modes.",
       "availableTiers": [
         1,
         2,

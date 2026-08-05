@@ -408,6 +408,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .status-strip { height: 31px; padding: 0 12px; }
   .dataset-version { display: none; }
   .meta-version-warning { display: none; }
+  .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .meta-version-warning { display: block; max-width: 190px; padding-left: 7px; border-left: 2px solid #e5655a; color: #ffd0cb; font-size: 10px; line-height: 1.25; }
   .mobile-tabs { height: 60px; display: grid; grid-template-columns: repeat(3, 1fr); position: sticky; top: var(--mobile-header-height, 0px); z-index: 15; background: var(--brown-dark); border-bottom: 2px solid #493328; box-shadow: 0 3px 8px rgba(45,30,20,.22); }
   .mobile-tabs button { display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-right: 1px solid #4c3529; color: #f2dfc2; background: transparent; font-size: 14px; font-weight: 900; }
   .mobile-tabs button:last-child { border-right: 0; }

@@ -1,6 +1,7 @@
-import { FileDown, FileUp, Minus, Plus, Search, Trash2 } from "lucide-react";
+import { FileDown, FileUp, Minus, Plus, ScanLine, Search, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { DATA, TIERS, TIER_NAMES, type BuilderState, type RuneTier } from "../model";
+import { InventoryScanDialog } from "./InventoryScanDialog";
 
 interface InventoryProps {
   state: BuilderState;
@@ -13,6 +14,7 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
   const [query, setQuery] = useState("");
   const [ownedOnly, setOwnedOnly] = useState(false);
   const [backupMessage, setBackupMessage] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const filtered = useMemo(() => DATA.runes.filter((rune) => {
     const matches = rune.name.toLowerCase().includes(query.toLowerCase());
@@ -42,6 +44,7 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
       <div className="section-heading">
         <div><span className="step-number">1</span><h2 id="inventory-title">Your runes</h2></div>
         <div className="heading-actions inventory-actions">
+          <button className="text-button" onClick={() => setScannerOpen(true)} title="Read runes from screenshots"><ScanLine /><span>Scan screenshots</span></button>
           <button className="text-button" onClick={onExport} title="Save a local backup file"><FileDown /><span>Save file</span></button>
           <button className="text-button" onClick={() => fileInput.current?.click()} title="Load a local backup file"><FileUp /><span>Load file</span></button>
           <input ref={fileInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => { void loadFile(event.target.files?.[0]); }} />
@@ -87,6 +90,7 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
           </div>
         ))}
       </div>
+      {scannerOpen && <InventoryScanDialog state={state} mutate={mutate} onClose={() => setScannerOpen(false)} />}
     </section>
   );
 }

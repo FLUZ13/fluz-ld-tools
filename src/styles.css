@@ -247,9 +247,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .rune-name-column img { width: 37px; height: 37px; flex: 0 0 auto; object-fit: contain; }
 .rune-name-column span { font-size: 11px; }
 .description-column { width: 245px; min-width: 245px; max-width: 245px; padding: 6px 8px; line-height: 1.25; }
-.legendary-column { box-shadow: inset 0 -4px #c18418; }
-.mythic-column { box-shadow: inset 0 -4px #d35c2e; }
-.immortal-description-column { box-shadow: inset 0 -4px #b8343f; }
+.bonus-column { width: 320px; min-width: 320px; max-width: 320px; }
+.runes-data-table thead .bonus-column { box-shadow: inset 0 -4px #b87922; }
+.rune-bonuses { display: grid; gap: 3px; }
+.rune-bonuses span { display: grid; grid-template-columns: 62px minmax(0, 1fr); align-items: start; gap: 5px; }
+.rune-bonuses b { padding-top: 1px; font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.bonus-legendary { color: #a36d12; }
+.bonus-mythic { color: #bd502b; }
+.bonus-immortal { color: #a83340; }
 .rank-column { width: 58px; min-width: 58px; padding: 5px; text-align: center; }
 .remarks-column { width: 230px; min-width: 230px; max-width: 230px; padding: 6px 8px; line-height: 1.25; }
 .role-group.role-support { background: #596d65; }

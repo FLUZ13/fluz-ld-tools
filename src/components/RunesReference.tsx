@@ -86,9 +86,7 @@ export function RunesReference() {
           <thead>
             <tr>
               <th rowSpan={2} className="rune-name-column">Rune</th>
-              <th rowSpan={2} className="description-column legendary-column">Legendary</th>
-              <th rowSpan={2} className="description-column mythic-column">Mythic</th>
-              <th rowSpan={2} className="description-column immortal-description-column">Immortal</th>
+              <th rowSpan={2} className="description-column bonus-column">Rune bonus</th>
               <th rowSpan={2} className="rank-column">Tier</th>
               <th rowSpan={2} className="remarks-column">Special remarks</th>
               {groupedImmortals.map((group) => <th key={group.id} colSpan={group.immortals.length} className={`role-group role-${group.id}`}>{group.label}</th>)}
@@ -107,9 +105,13 @@ export function RunesReference() {
             {filteredRunes.map((rune) => (
               <tr key={rune.id}>
                 <th scope="row" className="rune-name-column"><img src={rune.image} alt="" /><span>{rune.name.replace("Rune of ", "")}</span></th>
-                <td className="description-column">{rune.descriptions.legendary}</td>
-                <td className="description-column">{rune.descriptions.mythic}</td>
-                <td className="description-column">{rune.descriptions.immortal}</td>
+                <td className="description-column bonus-column">
+                  <div className="rune-bonuses">
+                    <span><b className="bonus-legendary">Legendary</b>{rune.descriptions.legendary}</span>
+                    <span><b className="bonus-mythic">Mythic</b>{rune.descriptions.mythic}</span>
+                    <span><b className="bonus-immortal">Immortal</b>{rune.descriptions.immortal}</span>
+                  </div>
+                </td>
                 <td className="rank-column"><b>{rune.tierLabel}</b></td>
                 <td className="remarks-column">{rune.notes || "-"}</td>
                 {orderedImmortals.map((immortal) => {

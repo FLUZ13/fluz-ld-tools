@@ -512,7 +512,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .runes-table-wrap { height: calc(100vh - 316px); }
   .runes-data-table .description-column, .runes-data-table .rank-column, .runes-data-table .remarks-column { display: none; }
   .runes-data-table, .runes-data-table tbody .rune-name-column { font-size: 9px; }
-  .runes-data-table .rune-name-column { width: clamp(96px, 27vw, 124px); min-width: clamp(96px, 27vw, 124px); }
+  .runes-data-table .rune-name-column { width: clamp(82px, 21vw, 96px); min-width: clamp(82px, 21vw, 96px); }
   .runes-data-table tbody .rune-name-column { position: sticky; left: 0; z-index: 4; box-shadow: 5px 0 9px rgba(53,43,34,.16); }
   .runes-data-table thead .rune-name-column { left: 0; z-index: 8; }
   .rune-name-column img { width: 32px; height: 32px; }

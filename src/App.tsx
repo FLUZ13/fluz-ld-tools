@@ -1,4 +1,4 @@
-import { Cloud, Compass, Grid3X3, History, Redo2, TableProperties, Undo2, WandSparkles } from "lucide-react";
+import { ArrowRight, Cloud, Compass, Grid3X3, History, Redo2, TableProperties, Undo2, WandSparkles } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { BoardBuilder } from "./components/BoardBuilder";
 import { ConflictDialog } from "./components/ConflictDialog";
@@ -17,7 +17,7 @@ import { DATA, META_VERSIONS, countOwnedRunes, type GameMode } from "./model";
 type MobileTab = "inventory" | "roster" | "results";
 
 function Brand({ title }: { title: string }) {
-  return <a className="brand" href="/rune-builder"><img src="/assets/ui/rune-smith.png" alt="" /><div><strong>{title}</strong><span>Lucky Defense tools</span></div></a>;
+  return <a className="brand" href="/"><img src="/assets/ui/rune-smith.png" alt="" /><div><strong>{title}</strong><span>Lucky Defense tools</span></div></a>;
 }
 
 type PageId = "builder" | "runes" | "boards" | "discover";
@@ -58,6 +58,31 @@ function PrivacyPage() {
         <section><h2>Your controls</h2><p>You can clear site data through your browser, export or import local backups, reset an anonymous workspace, and delete its encrypted cloud copy. Clearing browser storage without a backup or sync code may permanently remove local data.</p></section>
         <section><h2>Changes and contact</h2><p>This policy may be updated when storage, publishing, or analytics features change. Material changes will be reflected by the date above. Project contact and source-code links will be published on the Credits page when the public repository is available.</p></section>
         <a href="/rune-builder" className="secondary-button privacy-return">Return to the tools</a>
+      </main>
+      <SiteFooter />
+    </div>
+  );
+}
+
+function LandingPage() {
+  const tools = [
+    { href: "/rune-builder", label: "Rune Builder", icon: WandSparkles, className: "builder" },
+    { href: "/runes", label: "Runes", icon: TableProperties, className: "runes" },
+    { href: "/board-builder", label: "Board Builder", icon: Grid3X3, className: "boards" },
+  ];
+
+  return (
+    <div className="app-shell landing-shell">
+      <main className="landing-page">
+        <div className="landing-content">
+          <header className="landing-branding">
+            <img src="/assets/ui/rune-smith.png" alt="" />
+            <div><span>FLUZ Tools</span><h1>Lucky Defense Tools</h1></div>
+          </header>
+          <section className="landing-actions" aria-label="Choose a tool">
+            {tools.map(({ href, label, icon: Icon, className }) => <a key={href} className={`landing-action landing-action-${className}`} href={href}><Icon /><strong>{label}</strong><ArrowRight aria-hidden="true" /></a>)}
+          </section>
+        </div>
       </main>
       <SiteFooter />
     </div>
@@ -140,6 +165,7 @@ function ToolPage({ active, title, children }: { active: PageId; title: string; 
 }
 
 export default function App() {
+  if (window.location.pathname === "/") return <LandingPage />;
   if (window.location.pathname === "/privacy") return <PrivacyPage />;
   if (window.location.pathname === "/runes") return <RunesPage />;
   if (window.location.pathname === "/board-builder") return <ToolPage active="boards" title="LD Board Builder"><BoardBuilder /></ToolPage>;

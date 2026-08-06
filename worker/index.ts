@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const MAX_BODY_BYTES = 96 * 1024;
 const HISTORY_LIMIT = 20;
+const BOARD_SHARE_COOLDOWN_MS = 5 * 60 * 1000;
 const syncPrefix = "sync/";
 const workspacePattern = /^\/api\/sync\/([0-9a-f-]{36})(?:\/(history|restore))?$/i;
 const writeSchema = z.object({
@@ -87,6 +88,26 @@ async function sha256(value: string) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function formatShareCooldown(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}:${String(seconds % 60).padStart(2, "0")}`;
+}
+
+async function claimBoardShareCooldown(env: Env, ownerHash: string) {
+  const now = Date.now();
+  const cooldownUntil = now + BOARD_SHARE_COOLDOWN_MS;
+  const result = await env.DB.prepare(
+    "INSERT INTO board_share_cooldowns (owner_hash, cooldown_until) VALUES (?, ?) ON CONFLICT(owner_hash) DO UPDATE SET cooldown_until = excluded.cooldown_until WHERE board_share_cooldowns.cooldown_until <= ?",
+  ).bind(ownerHash, cooldownUntil, now).run();
+
+  if ((result.meta.changes ?? 0) === 1) return { accepted: true, cooldownUntil };
+
+  const existing = await env.DB.prepare("SELECT cooldown_until FROM board_share_cooldowns WHERE owner_hash = ?")
+    .bind(ownerHash)
+    .first<{ cooldown_until: number }>();
+  return { accepted: false, cooldownUntil: existing?.cooldown_until ?? cooldownUntil };
 }
 
 function secureEqual(left: string, right: string) {
@@ -431,13 +452,30 @@ async function handleBoards(request: Request, env: Env, url: URL, ctx: Execution
       env.WRITE_RATE_LIMITER.limit({ key: `board-ip:${clientIp}` }),
     ]);
     if (!ownerRateLimit.success || !ipRateLimit.success) return json({ error: "Rate limit exceeded" }, 429);
+    const cooldown = await claimBoardShareCooldown(env, ownerHash);
+    if (!cooldown.accepted) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((cooldown.cooldownUntil - Date.now()) / 1000));
+      return json({
+        error: `You can share another board in ${formatShareCooldown(retryAfterSeconds)}.`,
+        retryAfterSeconds,
+        cooldownUntil: new Date(cooldown.cooldownUntil).toISOString(),
+      }, 429);
+    }
     const boardId = crypto.randomUUID();
     const now = new Date().toISOString();
     const stateJson = JSON.stringify(parsed.board);
-    await env.DB.prepare("INSERT INTO community_boards (board_id, owner_hash, title, map, players, state_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-      .bind(boardId, ownerHash, parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, now).run();
+    try {
+      await env.DB.prepare("INSERT INTO community_boards (board_id, owner_hash, title, map, players, state_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        .bind(boardId, ownerHash, parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, now).run();
+    } catch (error) {
+      await env.DB.prepare("DELETE FROM board_share_cooldowns WHERE owner_hash = ? AND cooldown_until = ?")
+        .bind(ownerHash, cooldown.cooldownUntil)
+        .run()
+        .catch(() => undefined);
+      throw error;
+    }
     await invalidateBoardListCache(request, ctx);
-    return json({ boardId, updatedAt: now }, 201);
+    return json({ boardId, updatedAt: now, cooldownUntil: new Date(cooldown.cooldownUntil).toISOString() }, 201);
   }
 
   return json({ error: "Method not allowed" }, 405);
@@ -659,6 +697,7 @@ export default {
       env.DB.prepare("DELETE FROM community_board_comments WHERE created_at < datetime('now', '-90 days')"),
       env.DB.prepare("DELETE FROM community_board_reports WHERE created_at < datetime('now', '-90 days')"),
       env.DB.prepare("DELETE FROM community_boards WHERE updated_at < datetime('now', '-90 days')"),
+      env.DB.prepare("DELETE FROM board_share_cooldowns WHERE cooldown_until < ?").bind(Date.now() - 24 * 60 * 60 * 1000),
     ]));
   },
 } satisfies ExportedHandler<Env>;

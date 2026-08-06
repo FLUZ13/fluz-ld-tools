@@ -1,6 +1,6 @@
 import { Check, Copy, FileDown, FileUp, ImageDown, LoaderCircle, Maximize2, MousePointerClick, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users, X, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
-import { publishBoard } from "../board/api";
+import { BoardApiError, publishBoard } from "../board/api";
 import { decodeSharedBoard, downloadBlob, encodeSharedBoard, renderBoardPng } from "../board/export";
 import { BOARD_GUARDIANS, BOARD_MAPS, createBoardState, getBoardMap, migrateBoardState, resizeBoardSlots, type BoardState, type GuardianRarity } from "../board/model";
 import { deleteBoardSnapshot, listBoardSnapshots, loadBoardDraft, saveBoardDraft, saveBoardSnapshot } from "../board/storage";
@@ -16,9 +16,24 @@ const rarities: Array<{ id: GuardianFilter; label: string }> = [
 const MIN_BOARD_ZOOM = 55;
 const MAX_BOARD_ZOOM = 100;
 const DEFAULT_BOARD_ZOOM = 90;
+const BOARD_SHARE_COOLDOWN_STORAGE_KEY = "ld-board-share-cooldown-until";
 
 function fileSlug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "lucky-defense-board";
+}
+
+function readShareCooldownUntil() {
+  try {
+    const value = Number(window.localStorage.getItem(BOARD_SHARE_COOLDOWN_STORAGE_KEY));
+    return Number.isFinite(value) && value > Date.now() ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function formatShareCooldown(milliseconds: number) {
+  const seconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
 export function BoardBuilder() {
@@ -35,6 +50,8 @@ export function BoardBuilder() {
   const [dropTarget, setDropTarget] = useState<BoardSlot | null>(null);
   const [selectedGuardianId, setSelectedGuardianId] = useState<string | null>(null);
   const [busyAction, setBusyAction] = useState<"png" | "share" | null>(null);
+  const [shareCooldownUntil, setShareCooldownUntil] = useState<number | null>(null);
+  const [shareNow, setShareNow] = useState(() => Date.now());
   const [boardCanvasSize, setBoardCanvasSize] = useState<BoardCanvasSize>({ width: 0, height: 0 });
   const fileInput = useRef<HTMLInputElement>(null);
   const channel = useRef<BroadcastChannel | null>(null);
@@ -43,6 +60,17 @@ export function BoardBuilder() {
   const boardCanvasRef = useRef<HTMLDivElement>(null);
 
   const refreshSaved = useCallback(async () => setSavedBoards(await listBoardSnapshots()), []);
+  const setShareCooldown = useCallback((until: number | null) => {
+    const activeUntil = until && until > Date.now() ? until : null;
+    setShareCooldownUntil(activeUntil);
+    setShareNow(Date.now());
+    try {
+      if (activeUntil) window.localStorage.setItem(BOARD_SHARE_COOLDOWN_STORAGE_KEY, String(activeUntil));
+      else window.localStorage.removeItem(BOARD_SHARE_COOLDOWN_STORAGE_KEY);
+    } catch {
+      // The server still enforces the cooldown if local storage is unavailable.
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -67,6 +95,28 @@ export function BoardBuilder() {
     };
     return () => { active = false; channel.current?.close(); };
   }, [refreshSaved]);
+
+  useEffect(() => {
+    const syncCooldown = () => setShareCooldown(readShareCooldownUntil());
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === BOARD_SHARE_COOLDOWN_STORAGE_KEY) syncCooldown();
+    };
+    syncCooldown();
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [setShareCooldown]);
+
+  useEffect(() => {
+    if (!shareCooldownUntil) return;
+    const updateCountdown = () => {
+      const now = Date.now();
+      setShareNow(now);
+      if (shareCooldownUntil <= now) setShareCooldown(null);
+    };
+    updateCountdown();
+    const interval = window.setInterval(updateCountdown, 1000);
+    return () => window.clearInterval(interval);
+  }, [setShareCooldown, shareCooldownUntil]);
 
   useEffect(() => {
     if (!loaded) return;
@@ -237,11 +287,15 @@ export function BoardBuilder() {
     finally { setBusyAction(null); }
   };
 
+  const shareCooldownRemaining = Math.max(0, (shareCooldownUntil ?? 0) - shareNow);
+
   const share = async () => {
-    if (busyAction) return;
+    if (busyAction || shareCooldownRemaining > 0) return;
     setBusyAction("share");
     try {
-      await publishBoard(board);
+      const publication = await publishBoard(board);
+      const cooldownUntil = Date.parse(publication.cooldownUntil);
+      if (Number.isFinite(cooldownUntil)) setShareCooldown(cooldownUntil);
       const url = new URL("/board-builder", window.location.origin);
       url.hash = new URLSearchParams({ board: encodeSharedBoard(board) }).toString();
       try {
@@ -250,8 +304,15 @@ export function BoardBuilder() {
       } catch {
         setNotice("Shared to Discover.");
       }
-    } catch {
-      setNotice("Could not share your board to Discover. Please try again shortly.");
+    } catch (error) {
+      if (error instanceof BoardApiError) {
+        const cooldownUntil = error.cooldownUntil ? Date.parse(error.cooldownUntil) : NaN;
+        if (Number.isFinite(cooldownUntil)) setShareCooldown(cooldownUntil);
+        else if (error.retryAfterSeconds) setShareCooldown(Date.now() + error.retryAfterSeconds * 1000);
+        setNotice(error.message);
+      } else {
+        setNotice("Could not share your board to Discover. Please try again shortly.");
+      }
     } finally { setBusyAction(null); }
   };
 
@@ -274,7 +335,7 @@ export function BoardBuilder() {
           <button className="text-button framed" onClick={exportFile} title="Save board file" aria-label="Save board file"><FileDown /><span>Save file</span></button>
           <button className="text-button framed" onClick={() => fileInput.current?.click()} title="Load board file" aria-label="Load board file"><FileUp /><span>Load file</span></button>
           <input ref={fileInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => { void loadFile(event.target.files?.[0]); }} />
-          <button className="text-button framed discover-share-button" disabled={busyAction !== null} onClick={() => { void share(); }} title="Share this board to Discover" aria-label="Share board to Discover">{busyAction === "share" ? <LoaderCircle className="spin" /> : <Share2 />}<span>Share</span></button>
+          <button className="text-button framed discover-share-button" disabled={busyAction !== null || shareCooldownRemaining > 0} onClick={() => { void share(); }} title={shareCooldownRemaining > 0 ? `Share available in ${formatShareCooldown(shareCooldownRemaining)}` : "Share this board to Discover"} aria-label="Share board to Discover">{busyAction === "share" ? <LoaderCircle className="spin" /> : <Share2 />}<span>{busyAction === "share" ? "Sharing" : shareCooldownRemaining > 0 ? `Share ${formatShareCooldown(shareCooldownRemaining)}` : "Share"}</span></button>
           <button className="primary-button compact-action" disabled={busyAction !== null} onClick={() => { void exportPng(); }} title="Export board as PNG" aria-label="Export PNG">{busyAction === "png" ? <LoaderCircle className="spin" /> : <ImageDown />}<span>{busyAction === "png" ? "Exporting" : "PNG"}</span></button>
         </div>
       </section>

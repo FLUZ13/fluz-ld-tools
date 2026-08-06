@@ -1,22 +1,31 @@
 import type { BoardState, PublishedBoard } from "./model";
 import { getBoardOwnerKey } from "./storage";
 
-type ApiErrorBody = { error?: string; requestId?: string };
+type ApiErrorBody = { error?: string; requestId?: string; retryAfterSeconds?: number; cooldownUntil?: string };
 
 export class BoardApiError extends Error {
   requestId?: string;
+  retryAfterSeconds?: number;
+  cooldownUntil?: string;
 
-  constructor(message: string, requestId?: string) {
+  constructor(message: string, requestId?: string, retryAfterSeconds?: number, cooldownUntil?: string) {
     super(message);
     this.name = "BoardApiError";
     this.requestId = requestId;
+    this.retryAfterSeconds = retryAfterSeconds;
+    this.cooldownUntil = cooldownUntil;
   }
 }
 
 async function apiError(response: Response, fallback: string) {
   const body = await response.json().catch(() => ({})) as ApiErrorBody;
   const requestId = body.requestId ?? response.headers.get("X-Request-ID") ?? undefined;
-  return new BoardApiError(body.error || fallback, requestId);
+  return new BoardApiError(
+    body.error || fallback,
+    requestId,
+    typeof body.retryAfterSeconds === "number" ? body.retryAfterSeconds : undefined,
+    typeof body.cooldownUntil === "string" ? body.cooldownUntil : undefined,
+  );
 }
 
 export async function publishBoard(board: BoardState) {
@@ -26,7 +35,7 @@ export async function publishBoard(board: BoardState) {
     body: JSON.stringify({ ownerKey: getBoardOwnerKey(), board }),
   });
   if (!response.ok) throw await apiError(response, response.status === 429 ? "Publishing is temporarily rate limited." : "Could not publish this board.");
-  return response.json() as Promise<{ boardId: string }>;
+  return response.json() as Promise<{ boardId: string; updatedAt: string; cooldownUntil: string }>;
 }
 
 export interface PublishedBoardFilters {

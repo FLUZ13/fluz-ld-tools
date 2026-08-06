@@ -69,7 +69,7 @@ function PageNavigation({ active }: { active: PageId | null }) {
 const VISIT_REGISTERED_KEY = "ld-total-visit-registered";
 const VISIT_TOTAL_KEY = "ld-total-visit-count";
 const VISIT_TOTAL_REFRESH_KEY = "ld-total-visit-refreshed-at";
-const VISIT_TOTAL_REFRESH_MS = 6 * 60 * 60 * 1000;
+const VISIT_TOTAL_REFRESH_MS = 60 * 60 * 1000;
 
 function readStoredNumber(key: string) {
   try {

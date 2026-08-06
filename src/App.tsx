@@ -1,5 +1,5 @@
 import { ArrowRight, Cloud, Compass, Grid3X3, History, Redo2, TableProperties, Undo2, WandSparkles } from "lucide-react";
-import { Component, lazy, Suspense, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { ConflictDialog } from "./components/ConflictDialog";
 import { HistoryDialog } from "./components/HistoryDialog";
 import { Inventory } from "./components/Inventory";
@@ -66,6 +66,70 @@ function PageNavigation({ active }: { active: PageId | null }) {
   );
 }
 
+const PRESENCE_STORAGE_KEY = "ld-presence-visitor-id";
+
+function getPresenceVisitorId() {
+  try {
+    const saved = window.localStorage.getItem(PRESENCE_STORAGE_KEY);
+    if (saved && /^[A-Za-z0-9_-]{16,96}$/.test(saved)) return saved;
+    const visitorId = crypto.randomUUID().replaceAll("-", "");
+    window.localStorage.setItem(PRESENCE_STORAGE_KEY, visitorId);
+    return visitorId;
+  } catch {
+    return crypto.randomUUID().replaceAll("-", "");
+  }
+}
+
+function LiveVisitorCount() {
+  const [online, setOnline] = useState<number | null>(null);
+
+  useEffect(() => {
+    const visitorId = getPresenceVisitorId();
+    let active = true;
+    let inFlight = false;
+    let timer: number | undefined;
+    let lastHeartbeat = 0;
+
+    const heartbeat = async () => {
+      if (!active || document.visibilityState !== "visible" || inFlight) return;
+      inFlight = true;
+      lastHeartbeat = Date.now();
+      try {
+        const response = await fetch("/api/presence", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ visitorId }),
+        });
+        if (response.ok) {
+          const payload: unknown = await response.json();
+          if (payload && typeof payload === "object" && "online" in payload && typeof payload.online === "number") {
+            setOnline(Math.max(0, Math.floor(payload.online)));
+          }
+        }
+      } catch {
+        // Presence is optional and never blocks the rest of the site.
+      } finally {
+        inFlight = false;
+        if (active) timer = window.setTimeout(heartbeat, 10 * 60 * 1000);
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible" && Date.now() - lastHeartbeat > 10_000) void heartbeat();
+    };
+
+    void heartbeat();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      active = false;
+      if (timer !== undefined) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
+
+  return <span className="footer-visitors" title="Approximate active visitors, refreshed every 10 minutes." aria-live="polite"><i aria-hidden="true" />{online === null ? "Visitors online" : `${online} online`}</span>;
+}
+
 function SiteFooter() {
   const taps = useRef<number[]>([]);
   const findCredits = () => {
@@ -81,6 +145,7 @@ function SiteFooter() {
         <a href="/privacy">Privacy</a>
         <a href="https://github.com/FLUZ13/fluz-ld-tools" target="_blank" rel="noreferrer">GitHub</a>
       </nav>
+      <LiveVisitorCount />
     </footer>
   );
 }
@@ -97,7 +162,7 @@ function PrivacyPage() {
         <section><h2>Screenshot scanner</h2><p>Rune screenshots are decoded and analyzed locally in your browser. They are not uploaded to FLUZ Tools, Cloudflare, or a third-party recognition service. Images and temporary recognition data are discarded when the scanner is closed.</p></section>
         <section><h2>Community board publishing</h2><p>Publishing to Discover sends the board title, selected map, player count, placements, an anonymous browser-generated publisher identifier, and timestamps to Cloudflare D1. Published boards are public. Re-publishing from the same browser replaces its previous entry, and inactive entries expire after 90 days. A report sends the selected reason and an anonymous reporter identifier so repeated reports can be limited.</p></section>
         <section><h2>Backups and share links</h2><p>Downloaded backup files and PNG exports stay on your device until you choose to share them. Board share data is placed in the URL fragment, which browsers do not send to the web server as part of a normal page request.</p></section>
-        <section><h2>Hosting and security</h2><p>The site and APIs run on Cloudflare. Cloudflare may process standard connection information such as IP address, request headers, and security signals to deliver the service, prevent abuse, and apply rate limits. FLUZ Tools does not intentionally store IP addresses in its application database and currently uses no advertising or behavioral analytics service.</p></section>
+        <section><h2>Hosting and security</h2><p>The site and APIs run on Cloudflare. Cloudflare may process standard connection information such as IP address, request headers, and security signals to deliver the service, prevent abuse, and apply rate limits. FLUZ Tools does not intentionally store IP addresses in its application database and currently uses no advertising or behavioral analytics service.</p><p>The footer's approximate visitor count uses a random browser ID and a 20-minute active-tab window. The ID expires automatically from the counter and is not connected to a name, account, or game profile.</p></section>
         <section><h2>Your controls</h2><p>You can clear site data through your browser, export or import local backups, reset an anonymous workspace, and delete its encrypted cloud copy. Clearing browser storage without a backup or sync code may permanently remove local data.</p></section>
         <section><h2>Changes and contact</h2><p>This policy may be updated when storage, publishing, or analytics features change. Material changes will be reflected by the date above. The public source code and project contact links are available on the Credits page.</p></section>
         <a href="/rune-builder" className="secondary-button privacy-return">Return to the tools</a>

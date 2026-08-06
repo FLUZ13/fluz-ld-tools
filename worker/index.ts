@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
 const MAX_BODY_BYTES = 96 * 1024;
@@ -33,6 +33,14 @@ const boardCommentSchema = z.object({
 });
 const boardReportPattern = /^\/api\/boards\/([0-9a-f-]{36})\/report$/i;
 const boardCommentPattern = /^\/api\/boards\/([0-9a-f-]{36})\/comments$/i;
+const moderatorSessionPattern = /^\/api\/moderator\/session$/;
+const moderatorLoginPattern = /^\/api\/moderator\/login$/;
+const moderatorLogoutPattern = /^\/api\/moderator\/logout$/;
+const moderatorCommentPattern = /^\/api\/moderator\/boards\/([0-9a-f-]{36})\/comments\/([0-9a-f-]{36})$/i;
+const moderatorLoginSchema = z.object({ username: z.string().min(1).max(128), password: z.string().min(1).max(512) });
+const moderatorSessionLifetimeSeconds = 60 * 60 * 12;
+const moderatorSessionCookie = "__Host-ld-moderator";
+type ModeratorEnv = Env & { MODERATOR_USERNAME?: string; MODERATOR_PASSWORD?: string; MODERATOR_SESSION_SECRET?: string };
 
 function json(body: unknown, status = 200, cacheControl = "no-store", requestId = crypto.randomUUID()) {
   const payload = body && typeof body === "object" && "error" in body
@@ -50,6 +58,12 @@ function json(body: unknown, status = 200, cacheControl = "no-store", requestId 
   });
 }
 
+function jsonWithHeaders(body: unknown, status = 200, cacheControl = "no-store", requestId = crypto.randomUUID(), headers: Record<string, string> = {}) {
+  const response = json(body, status, cacheControl, requestId);
+  for (const [name, value] of Object.entries(headers)) response.headers.set(name, value);
+  return response;
+}
+
 async function sha256(value: string) {
   const bytes = new TextEncoder().encode(value);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -59,6 +73,60 @@ async function sha256(value: string) {
 function secureEqual(left: string, right: string) {
   if (!/^[a-f0-9]{64}$/.test(left) || !/^[a-f0-9]{64}$/.test(right)) return false;
   return timingSafeEqual(Buffer.from(left, "hex"), Buffer.from(right, "hex"));
+}
+
+function secureTextEqual(left: string, right: string) {
+  const leftBytes = Buffer.from(left);
+  const rightBytes = Buffer.from(right);
+  return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes);
+}
+
+async function matchesSecret(value: string, expected: string) {
+  const [left, right] = await Promise.all([sha256(value), sha256(expected)]);
+  return secureEqual(left, right);
+}
+
+function readCookie(request: Request, name: string) {
+  const cookie = request.headers.get("Cookie") ?? "";
+  for (const item of cookie.split(";")) {
+    const [key, ...value] = item.trim().split("=");
+    if (key === name) return value.join("=");
+  }
+  return undefined;
+}
+
+function signModeratorSession(payload: string, secret: string) {
+  return createHmac("sha256", secret).update(payload).digest("base64url");
+}
+
+function createModeratorSession(secret: string) {
+  const payload = Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + moderatorSessionLifetimeSeconds, nonce: crypto.randomUUID() })).toString("base64url");
+  return `${payload}.${signModeratorSession(payload, secret)}`;
+}
+
+function moderatorCookie(value: string, maxAge = moderatorSessionLifetimeSeconds) {
+  return `${moderatorSessionCookie}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+}
+
+function expiredModeratorCookie() { return `${moderatorSessionCookie}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`; }
+
+async function isModerator(request: Request, env: ModeratorEnv) {
+  const secret = env.MODERATOR_SESSION_SECRET;
+  const token = readCookie(request, moderatorSessionCookie);
+  if (!secret || !token) return false;
+  const splitAt = token.lastIndexOf(".");
+  if (splitAt <= 0) return false;
+  const payload = token.slice(0, splitAt);
+  if (!secureTextEqual(token.slice(splitAt + 1), signModeratorSession(payload, secret))) return false;
+  try {
+    const data = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { exp?: unknown };
+    return typeof data.exp === "number" && Number.isSafeInteger(data.exp) && data.exp > Math.floor(Date.now() / 1000);
+  } catch { return false; }
+}
+
+function sameOrigin(request: Request) {
+  const origin = request.headers.get("Origin");
+  return !origin || origin === new URL(request.url).origin;
 }
 
 function bearerToken(request: Request) {
@@ -419,10 +487,97 @@ async function handleBoardComments(request: Request, env: Env, boardId: string, 
   return json({ comment }, 201);
 }
 
+async function handleModeratorLogin(request: Request, env: ModeratorEnv) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (!sameOrigin(request)) return json({ error: "Invalid request origin" }, 403);
+  if (!env.MODERATOR_USERNAME || !env.MODERATOR_PASSWORD || !env.MODERATOR_SESSION_SECRET) {
+    return json({ error: "Moderator access is unavailable" }, 503);
+  }
+
+  const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
+  const rate = await env.WRITE_RATE_LIMITER.limit({ key: `moderator-login:${clientIp}` });
+  if (!rate.success) return json({ error: "Too many sign-in attempts. Try again shortly." }, 429);
+
+  let parsed: z.infer<typeof moderatorLoginSchema>;
+  try { parsed = moderatorLoginSchema.parse(await readJson(request)); }
+  catch (error) {
+    if (error instanceof Response) return error;
+    return json({ error: "Invalid credentials" }, 401);
+  }
+
+  const [usernameOk, passwordOk] = await Promise.all([
+    matchesSecret(parsed.username, env.MODERATOR_USERNAME),
+    matchesSecret(parsed.password, env.MODERATOR_PASSWORD),
+  ]);
+  if (!usernameOk || !passwordOk) return json({ error: "Invalid credentials" }, 401);
+
+  const session = createModeratorSession(env.MODERATOR_SESSION_SECRET);
+  return jsonWithHeaders(
+    { authenticated: true, expiresIn: moderatorSessionLifetimeSeconds },
+    200,
+    "no-store",
+    crypto.randomUUID(),
+    { "Set-Cookie": moderatorCookie(session) },
+  );
+}
+
+async function handleModeratorSession(request: Request, env: ModeratorEnv) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+  return json({ authenticated: await isModerator(request, env) });
+}
+
+async function handleModeratorLogout(request: Request) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (!sameOrigin(request)) return json({ error: "Invalid request origin" }, 403);
+  return jsonWithHeaders(
+    { authenticated: false },
+    200,
+    "no-store",
+    crypto.randomUUID(),
+    { "Set-Cookie": expiredModeratorCookie() },
+  );
+}
+
+async function handleModeratorComment(request: Request, env: ModeratorEnv, boardId: string, commentId: string, ctx: ExecutionContext) {
+  if (request.method !== "DELETE") return json({ error: "Method not allowed" }, 405);
+  if (!sameOrigin(request)) return json({ error: "Invalid request origin" }, 403);
+  if (!(await isModerator(request, env))) return json({ error: "Moderator authentication required" }, 401);
+
+  const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
+  const rate = await env.WRITE_RATE_LIMITER.limit({ key: `moderator-delete:${clientIp}` });
+  if (!rate.success) return json({ error: "Too many moderation requests. Try again shortly." }, 429);
+
+  const result = await env.DB.prepare("DELETE FROM community_board_comments WHERE board_id = ?1 AND comment_id = ?2")
+    .bind(boardId, commentId).run();
+  if ((result.meta.changes ?? 0) !== 1) return json({ error: "Comment not found" }, 404);
+  await invalidateBoardListCache(request, ctx);
+  return json({ deleted: true });
+}
+
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return json({ ok: true, service: "fluz-ld-tools" });
+    const moderatorEnv = env as ModeratorEnv;
+    const moderatorCommentMatch = moderatorCommentPattern.exec(url.pathname);
+    if (moderatorCommentMatch) {
+      const requestId = crypto.randomUUID();
+      try { return await handleModeratorComment(request, moderatorEnv, moderatorCommentMatch[1].toLowerCase(), moderatorCommentMatch[2].toLowerCase(), ctx); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "moderator_comment_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return json({ error: "Internal error" }, 500, "no-store", requestId);
+      }
+    }
+    if (moderatorLoginPattern.test(url.pathname)) {
+      const requestId = crypto.randomUUID();
+      try { return await handleModeratorLogin(request, moderatorEnv); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "moderator_login_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return json({ error: "Internal error" }, 500, "no-store", requestId);
+      }
+    }
+    if (moderatorLogoutPattern.test(url.pathname)) return handleModeratorLogout(request);
+    if (moderatorSessionPattern.test(url.pathname)) return handleModeratorSession(request, moderatorEnv);
     const boardCommentMatch = boardCommentPattern.exec(url.pathname);
     if (boardCommentMatch) {
       const requestId = crypto.randomUUID();

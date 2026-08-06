@@ -78,3 +78,38 @@ export async function postPublishedBoardComment(boardId: string, body: string) {
   if (!response.ok) throw await apiError(response, response.status === 429 ? "Comments are temporarily rate limited." : "Could not post this comment.");
   return response.json() as Promise<{ comment: PublishedBoardComment }>;
 }
+
+export interface ModeratorSession {
+  authenticated: boolean;
+}
+
+export async function fetchModeratorSession(signal?: AbortSignal) {
+  const response = await fetch("/api/moderator/session", { cache: "no-store", credentials: "same-origin", signal });
+  if (!response.ok) throw await apiError(response, "Could not check moderator session.");
+  return response.json() as Promise<ModeratorSession>;
+}
+
+export async function loginModerator(username: string, password: string) {
+  const response = await fetch("/api/moderator/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ username, password }),
+  });
+  if (!response.ok) throw await apiError(response, "Could not sign in.");
+  return response.json() as Promise<ModeratorSession>;
+}
+
+export async function logoutModerator() {
+  const response = await fetch("/api/moderator/logout", { method: "POST", credentials: "same-origin" });
+  if (!response.ok) throw await apiError(response, "Could not sign out.");
+  return response.json() as Promise<ModeratorSession>;
+}
+
+export async function deletePublishedBoardComment(boardId: string, commentId: string) {
+  const response = await fetch(`/api/moderator/boards/${encodeURIComponent(boardId)}/comments/${encodeURIComponent(commentId)}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  if (!response.ok) throw await apiError(response, "Could not delete comment.");
+}

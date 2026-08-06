@@ -1,6 +1,6 @@
-import { Check, Clock3, Copy, ExternalLink, Flag, LoaderCircle, MessageCircle, RefreshCw, Search, Send, X } from "lucide-react";
+import { Check, Clock3, Copy, ExternalLink, Flag, LoaderCircle, LogIn, LogOut, MessageCircle, RefreshCw, Search, Send, ShieldCheck, Trash2, Wrench, X } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
-import { BoardApiError, fetchPublishedBoardComments, fetchPublishedBoards, postPublishedBoardComment, reportPublishedBoard, type PublishedBoardComment } from "../board/api";
+import { BoardApiError, deletePublishedBoardComment, fetchModeratorSession, fetchPublishedBoardComments, fetchPublishedBoards, loginModerator, logoutModerator, postPublishedBoardComment, reportPublishedBoard, type PublishedBoardComment } from "../board/api";
 import { encodeSharedBoard } from "../board/export";
 import { BOARD_MAPS, getBoardMap, normalizeBoardMapId, type BoardState, type PublishedBoard } from "../board/model";
 import { BoardPreview } from "./BoardPreview";
@@ -8,13 +8,16 @@ import { BoardPreview } from "./BoardPreview";
 interface BoardCommentsProps {
   board: PublishedBoard;
   onCommentAdded: (boardId: string) => void;
+  onCommentDeleted: (boardId: string) => void;
+  isModerator: boolean;
 }
 
-function BoardComments({ board, onCommentAdded }: BoardCommentsProps) {
+function BoardComments({ board, onCommentAdded, onCommentDeleted, isModerator }: BoardCommentsProps) {
   const [comments, setComments] = useState<PublishedBoardComment[]>([]);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [deletingId, setDeletingId] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -51,11 +54,26 @@ function BoardComments({ board, onCommentAdded }: BoardCommentsProps) {
     } finally { setSending(false); }
   };
 
+  const removeComment = async (commentId: string) => {
+    if (!window.confirm("Delete this comment?")) return;
+    setDeletingId(commentId);
+    setError("");
+    try {
+      await deletePublishedBoardComment(board.boardId, commentId);
+      setComments((current) => current.filter((comment) => comment.commentId !== commentId));
+      onCommentDeleted(board.boardId);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : "Could not delete comment.");
+    } finally {
+      setDeletingId("");
+    }
+  };
+
   return (
     <section className="discover-comments" aria-label={`Comments for ${board.title}`}>
       <div className="discover-comments-heading"><strong><MessageCircle />Comments {board.commentCount > 0 ? `(${board.commentCount})` : ""}</strong><span>Anonymous</span></div>
       {loading && <p className="comments-status"><LoaderCircle />Loading comments...</p>}
-      {!loading && comments.length > 0 && <ul className="comment-list">{comments.map((comment) => <li key={comment.commentId}><p>{comment.body}</p><time dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleDateString()}</time></li>)}</ul>}
+      {!loading && comments.length > 0 && <ul className="comment-list">{comments.map((comment) => <li key={comment.commentId}><p>{comment.body}</p><div className="comment-meta"><time dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleDateString()}</time>{isModerator && <button className="comment-delete" type="button" disabled={deletingId === comment.commentId} onClick={() => { void removeComment(comment.commentId); }} title="Delete comment" aria-label="Delete comment">{deletingId === comment.commentId ? <LoaderCircle className="moderator-spin" /> : <Trash2 />}</button>}</div></li>)}</ul>}
       {!loading && comments.length === 0 && <p className="comments-empty">No comments yet.</p>}
       {error && <p className="comments-error" role="alert">{error}</p>}
       <form className="comment-compose" onSubmit={submit}>
@@ -80,6 +98,12 @@ export function DiscoverBoards() {
   const [copiedId, setCopiedId] = useState("");
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
   const [commentsBoard, setCommentsBoard] = useState<PublishedBoard | null>(null);
+  const [isModerator, setIsModerator] = useState(false);
+  const [moderatorPanelOpen, setModeratorPanelOpen] = useState(false);
+  const [moderatorUsername, setModeratorUsername] = useState("");
+  const [moderatorPassword, setModeratorPassword] = useState("");
+  const [moderatorBusy, setModeratorBusy] = useState(false);
+  const [moderatorError, setModeratorError] = useState("");
 
   const filters = { map: map === "all" ? undefined : map, players: players === "all" ? undefined : players as "1" | "2", query };
 
@@ -119,11 +143,25 @@ export function DiscoverBoards() {
   }, [query, map, players, refresh]);
 
   useEffect(() => {
-    if (!commentsBoard) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setCommentsBoard(null); };
+    const controller = new AbortController();
+    void fetchModeratorSession(controller.signal)
+      .then((result) => setIsModerator(result.authenticated))
+      .catch(() => setIsModerator(false));
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!commentsBoard && !moderatorPanelOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setCommentsBoard(null);
+      setModeratorPanelOpen(false);
+      setModeratorPassword("");
+      setModeratorError("");
+    };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [commentsBoard]);
+  }, [commentsBoard, moderatorPanelOpen]);
 
   const visibleBoards = boards.filter((board) => !hiddenIds.has(board.boardId));
   const activeCommentsBoard = commentsBoard ? boards.find((board) => board.boardId === commentsBoard.boardId) ?? commentsBoard : null;
@@ -152,6 +190,49 @@ export function DiscoverBoards() {
     setBoards((current) => current.map((board) => board.boardId === boardId ? { ...board, commentCount: board.commentCount + 1 } : board));
   };
 
+  const decreaseCommentCount = (boardId: string) => {
+    setBoards((current) => current.map((board) => board.boardId === boardId ? { ...board, commentCount: Math.max(0, board.commentCount - 1) } : board));
+  };
+
+  const submitModeratorLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (moderatorBusy) return;
+    setModeratorBusy(true);
+    setModeratorError("");
+    try {
+      const result = await loginModerator(moderatorUsername, moderatorPassword);
+      setIsModerator(result.authenticated);
+      setModeratorPassword("");
+      if (!result.authenticated) setModeratorError("Sign in was not accepted.");
+    } catch (loginError) {
+      setModeratorError(loginError instanceof Error ? loginError.message : "Could not sign in.");
+    } finally {
+      setModeratorBusy(false);
+    }
+  };
+
+  const signOutModerator = async () => {
+    setModeratorBusy(true);
+    setModeratorError("");
+    try {
+      await logoutModerator();
+      setIsModerator(false);
+      setModeratorPanelOpen(false);
+      setModeratorUsername("");
+      setModeratorPassword("");
+    } catch (logoutError) {
+      setModeratorError(logoutError instanceof Error ? logoutError.message : "Could not sign out.");
+    } finally {
+      setModeratorBusy(false);
+    }
+  };
+
+  const closeModeratorPanel = () => {
+    setModeratorPanelOpen(false);
+    setModeratorPassword("");
+    setModeratorError("");
+  };
+
   return (
     <main className="discover-page" id="main-content">
       <section className="discover-heading">
@@ -170,11 +251,13 @@ export function DiscoverBoards() {
         <article className="discover-card" key={board.boardId}>
           <BoardPreview board={board} compact />
           <div className="discover-card-copy"><div><h2>{board.title}</h2><span><Clock3 />{new Date(board.updatedAt).toLocaleDateString()} - {getBoardMap(board.map).name} - {board.players}P</span></div><div className="discover-actions"><button className="icon-button" onClick={() => { void copyBoardLink(board); }} title="Copy board link" aria-label={copiedId === board.boardId ? "Board link copied" : "Copy board link"}>{copiedId === board.boardId ? <Check /> : <Copy />}</button>{board.players === 2 && <button className="icon-button" onClick={() => setCommentsBoard(board)} title="Comments" aria-label={`Comments (${board.commentCount})`}><MessageCircle /></button>}<a className="icon-button" href={boardUrl(board)} title="Open in board builder" aria-label="Open in board builder"><ExternalLink /></a><button className="icon-button report-button" onClick={() => { void reportBoard(board); }} title="Hide and report board" aria-label="Hide and report board"><Flag /></button></div></div>
-          {board.players === 1 && <BoardComments board={board} onCommentAdded={increaseCommentCount} />}
+          {board.players === 1 && <BoardComments board={board} onCommentAdded={increaseCommentCount} onCommentDeleted={decreaseCommentCount} isModerator={isModerator} />}
         </article>
       ))}</section>
       {cursor && !error && <button className="secondary-button discover-more" disabled={loadingMore} onClick={() => { void loadMore(); }}>{loadingMore ? "Loading..." : "Load more"}</button>}
-      {activeCommentsBoard && <div className="comments-dialog-backdrop" role="presentation" onMouseDown={() => setCommentsBoard(null)}><section className="comments-dialog" role="dialog" aria-modal="true" aria-labelledby="board-comments-title" onMouseDown={(event) => event.stopPropagation()}><header><div><h2 id="board-comments-title">Comments</h2><p>{activeCommentsBoard.title}</p></div><button className="icon-button" onClick={() => setCommentsBoard(null)} aria-label="Close comments"><X /></button></header><BoardComments board={activeCommentsBoard} onCommentAdded={increaseCommentCount} /></section></div>}
+      {activeCommentsBoard && <div className="comments-dialog-backdrop" role="presentation" onMouseDown={() => setCommentsBoard(null)}><section className="comments-dialog" role="dialog" aria-modal="true" aria-labelledby="board-comments-title" onMouseDown={(event) => event.stopPropagation()}><header><div><h2 id="board-comments-title">Comments</h2><p>{activeCommentsBoard.title}</p></div><button className="icon-button" onClick={() => setCommentsBoard(null)} aria-label="Close comments"><X /></button></header><BoardComments board={activeCommentsBoard} onCommentAdded={increaseCommentCount} onCommentDeleted={decreaseCommentCount} isModerator={isModerator} /></section></div>}
+      <button className={`moderator-entry icon-button${isModerator ? " is-active" : ""}`} type="button" onClick={() => { setModeratorPanelOpen(true); setModeratorError(""); }} title={isModerator ? "Moderator tools" : "Moderator sign in"} aria-label={isModerator ? "Open moderator tools" : "Moderator sign in"}><Wrench /></button>
+      {moderatorPanelOpen && <div className="comments-dialog-backdrop moderator-dialog-backdrop" role="presentation" onMouseDown={closeModeratorPanel}><section className="moderator-dialog" role="dialog" aria-modal="true" aria-labelledby="moderator-title" onMouseDown={(event) => event.stopPropagation()}><header><div><h2 id="moderator-title">Moderator</h2><p>{isModerator ? "Comment moderation is enabled." : "Sign in to manage community comments."}</p></div><button className="icon-button" type="button" onClick={closeModeratorPanel} aria-label="Close moderator tools"><X /></button></header>{isModerator ? <div className="moderator-authenticated"><span><ShieldCheck />Moderator mode is enabled</span><p>Delete controls appear beside each community comment.</p><button className="secondary-button" type="button" disabled={moderatorBusy} onClick={() => { void signOutModerator(); }}><LogOut />Sign out</button></div> : <form className="moderator-form" onSubmit={submitModeratorLogin}><label>Username<input value={moderatorUsername} onChange={(event) => setModeratorUsername(event.target.value)} autoComplete="username" maxLength={128} required /></label><label>Password<input type="password" value={moderatorPassword} onChange={(event) => setModeratorPassword(event.target.value)} autoComplete="current-password" maxLength={512} required /></label>{moderatorError && <p className="form-error" role="alert">{moderatorError}</p>}<button className="primary-button" type="submit" disabled={moderatorBusy || !moderatorUsername || !moderatorPassword}>{moderatorBusy ? <LoaderCircle className="moderator-spin" /> : <LogIn />}Sign in</button></form>}</section></div>}
     </main>
   );
 }

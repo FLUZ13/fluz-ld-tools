@@ -488,6 +488,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .comment-list li { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 6px 7px; border: 1px solid #d1b999; border-radius: 4px; color: #5d4738; background: #fff5e4; }
 .comment-list p { margin: 0; overflow-wrap: anywhere; font-size: 10px; line-height: 1.35; }
 .comment-list time { flex: 0 0 auto; color: #927963; font-size: 8px; }
+.comment-meta { display: inline-flex; align-items: center; gap: 4px; flex: 0 0 auto; }
+.comment-delete { display: grid; width: 22px; height: 22px; place-items: center; border: 1px solid #bd5348; border-radius: 4px; color: #9f382e; background: #fff5e4; cursor: pointer; }
+.comment-delete:hover:not(:disabled) { background: #f6d7cf; }
+.comment-delete:disabled { opacity: .55; cursor: wait; }
+.comment-delete svg { width: 12px; height: 12px; }
 .comments-status, .comments-empty, .comments-error { display: flex; align-items: center; gap: 5px; margin: 0; padding: 3px 10px 8px; color: #7b6550; font-size: 9px; }
 .comments-status svg, .comment-compose button svg { width: 13px; animation: spinner 1s linear infinite; }
 .comments-error { color: #9a4237; }
@@ -502,6 +507,23 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .comments-dialog h2 { font-family: "LD Display"; font-size: 18px; }
 .comments-dialog header p { margin-top: 2px; color: #e3cbae; font-size: 10px; }
 .comments-dialog > header .icon-button { color: #5a4739; background: #fff1d4; }
+.moderator-entry { position: fixed; z-index: 45; right: 18px; bottom: 18px; display: grid; width: 40px; height: 40px; place-items: center; border: 1px solid #b89d7e; border-radius: 6px; color: #6e4c37; background: #f2e5ce; box-shadow: 0 3px 10px rgba(47, 31, 20, .25); }
+.moderator-entry:hover { border-color: #278d86; color: #0e6d68; }
+.moderator-entry.is-active { border-color: #278d86; color: #0e6d68; background: #d7f1ea; }
+.moderator-dialog { width: min(390px, 100%); overflow: hidden; border: 3px solid #79523a; border-radius: 7px; background: #f7e7c6; box-shadow: 0 14px 40px rgba(0, 0, 0, .45); }
+.moderator-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 14px 16px; color: #fff6df; background: #7b523a; }
+.moderator-dialog header h2, .moderator-dialog header p { margin: 0; }
+.moderator-dialog header p { margin-top: 2px; color: #e3cbae; font-size: 10px; }
+.moderator-dialog header .icon-button { color: #5a4739; background: #fff1d4; }
+.moderator-form { display: grid; gap: 12px; padding: 16px; }
+.moderator-form label { display: grid; gap: 6px; color: #563a29; font-size: 12px; font-weight: 700; }
+.moderator-form input { min-height: 38px; padding: 0 10px; border: 1px solid #b79a75; border-radius: 4px; color: #38281e; background: #fff8e8; }
+.moderator-authenticated { display: grid; gap: 14px; padding: 18px; }
+.moderator-authenticated span { display: flex; align-items: center; gap: 8px; color: #0d6f69; font-weight: 700; }
+.moderator-authenticated span svg { width: 18px; height: 18px; }
+.moderator-authenticated p { margin: 0; color: #6b4a36; font-size: 12px; }
+@keyframes moderator-spin { to { transform: rotate(360deg); } }
+.moderator-spin { animation: moderator-spin 1s linear infinite; }
 @keyframes spinner { to { transform: rotate(360deg); } }
 .discover-more { display: flex; margin: 6px auto 0; }
 
@@ -723,4 +745,19 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .sync-button { justify-self: end; }
   .mobile-tabs button { gap: 5px; font-size: 12px; }
   .mobile-tabs span { width: 25px; height: 25px; font-size: 13px; }
+}
+
+@media (max-width: 720px) {
+  .moderator-entry {
+    right: 12px;
+    bottom: 12px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .moderator-dialog {
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+  }
 }

@@ -3,7 +3,6 @@ import { z } from "zod";
 
 const MAX_BODY_BYTES = 96 * 1024;
 const HISTORY_LIMIT = 20;
-const PRESENCE_ACTIVE_WINDOW_MS = 20 * 60 * 1000;
 const syncPrefix = "sync/";
 const workspacePattern = /^\/api\/sync\/([0-9a-f-]{36})(?:\/(history|restore))?$/i;
 const writeSchema = z.object({
@@ -39,34 +38,26 @@ const moderatorLoginPattern = /^\/api\/moderator\/login$/;
 const moderatorLogoutPattern = /^\/api\/moderator\/logout$/;
 const moderatorCommentPattern = /^\/api\/moderator\/boards\/([0-9a-f-]{36})\/comments\/([0-9a-f-]{36})$/i;
 const moderatorLoginSchema = z.object({ username: z.string().min(1).max(128), password: z.string().min(1).max(512) });
-const presenceSchema = z.object({ visitorId: z.string().regex(/^[A-Za-z0-9_-]{16,96}$/) });
 const moderatorSessionLifetimeSeconds = 60 * 60 * 12;
 const moderatorSessionCookie = "__Host-ld-moderator";
 type ModeratorEnv = Env & { MODERATOR_USERNAME?: string; MODERATOR_PASSWORD?: string; MODERATOR_SESSION_SECRET?: string };
 
 export class PresenceCounter {
   constructor(private readonly state: DurableObjectState) {
-    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS presence (visitor_id TEXT PRIMARY KEY, last_seen INTEGER NOT NULL)");
+    // Retire the former heartbeat data; the visitor total stores no identifiers.
+    this.state.storage.sql.exec("DROP TABLE IF EXISTS presence");
+    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS visitor_totals (id INTEGER PRIMARY KEY, total INTEGER NOT NULL)");
+    this.state.storage.sql.exec("INSERT OR IGNORE INTO visitor_totals (id, total) VALUES (1, 0)");
   }
 
   async fetch(request: Request): Promise<Response> {
-    if (request.method !== "POST" || new URL(request.url).pathname !== "/heartbeat") {
+    if (!['GET', 'POST'].includes(request.method) || new URL(request.url).pathname !== "/total") {
       return Response.json({ error: "Not found" }, { status: 404 });
     }
 
-    const parsed = presenceSchema.safeParse(await request.json().catch(() => null));
-    if (!parsed.success) return Response.json({ error: "Invalid visitor" }, { status: 400 });
-
-    const now = Date.now();
-    const cutoff = now - PRESENCE_ACTIVE_WINDOW_MS;
-    this.state.storage.sql.exec("DELETE FROM presence WHERE last_seen < ?", cutoff);
-    this.state.storage.sql.exec(
-      "INSERT INTO presence (visitor_id, last_seen) VALUES (?, ?) ON CONFLICT(visitor_id) DO UPDATE SET last_seen = excluded.last_seen",
-      parsed.data.visitorId,
-      now,
-    );
-    const [{ online = 0 } = {}] = this.state.storage.sql.exec<{ online: number }>("SELECT COUNT(*) AS online FROM presence WHERE last_seen >= ?", cutoff).toArray();
-    return Response.json({ online, refreshedAt: now }, { headers: { "Cache-Control": "no-store" } });
+    if (request.method === "POST") this.state.storage.sql.exec("UPDATE visitor_totals SET total = total + 1 WHERE id = 1");
+    const [{ total = 0 } = {}] = this.state.storage.sql.exec<{ total: number }>("SELECT total FROM visitor_totals WHERE id = 1").toArray();
+    return Response.json({ total }, { headers: { "Cache-Control": "no-store" } });
   }
 }
 
@@ -582,24 +573,17 @@ async function handleModeratorComment(request: Request, env: ModeratorEnv, board
   return json({ deleted: true });
 }
 
-async function handlePresence(request: Request, env: Env) {
-  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+async function handleVisitorTotal(request: Request, env: Env) {
+  if (!['GET', 'POST'].includes(request.method)) return json({ error: "Method not allowed" }, 405);
   if (!sameOrigin(request)) return json({ error: "Invalid request origin" }, 403);
 
-  const parsed = presenceSchema.safeParse(await readJson(request));
-  if (!parsed.success) return json({ error: "Invalid visitor" }, 400);
-
   const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
-  const rate = await env.SYNC_RATE_LIMITER.limit({ key: `presence:${clientIp}` });
-  if (!rate.success) return json({ error: "Too many presence updates. Try again shortly." }, 429);
+  const rate = await env.SYNC_RATE_LIMITER.limit({ key: `visits:${clientIp}` });
+  if (!rate.success) return json({ error: "Too many visitor count requests. Try again shortly." }, 429);
 
-  const counter = env.PRESENCE.get(env.PRESENCE.idFromName("site-presence"));
-  const response = await counter.fetch("https://presence.internal/heartbeat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(parsed.data),
-  });
-  const body = await response.json().catch(() => ({ error: "Presence unavailable" }));
+  const counter = env.PRESENCE.get(env.PRESENCE.idFromName("site-visitor-total"));
+  const response = await counter.fetch("https://visits.internal/total", { method: request.method });
+  const body = await response.json().catch(() => ({ error: "Visitor count unavailable" }));
   return json(body, response.status);
 }
 
@@ -607,12 +591,12 @@ export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return json({ ok: true, service: "fluz-ld-tools" });
-    if (url.pathname === "/api/presence") {
+    if (url.pathname === "/api/visits") {
       const requestId = crypto.randomUUID();
-      try { return await handlePresence(request, env); }
+      try { return await handleVisitorTotal(request, env); }
       catch (error) {
-        console.error(JSON.stringify({ event: "presence_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
-        return json({ error: "Presence unavailable" }, 503, "no-store", requestId);
+        console.error(JSON.stringify({ event: "visitor_total_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return json({ error: "Visitor count unavailable" }, 503, "no-store", requestId);
       }
     }
     const moderatorEnv = env as ModeratorEnv;

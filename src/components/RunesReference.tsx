@@ -15,14 +15,25 @@ const modes: Array<{ id: GameMode; label: string }> = [
 ];
 const scoreLabels = ["X", "Low", "Maybe", "Good", "Great", "Best"];
 
+function readReferenceState() {
+  const params = new URLSearchParams(window.location.search);
+  const requestedMode = params.get("mode") as GameMode | null;
+  const requestedVersion = params.get("version") as MetaVersion | null;
+  const immortalId = params.get("immortal") ?? "";
+  return {
+    mode: modes.some((item) => item.id === requestedMode) ? requestedMode! : "pve" as GameMode,
+    metaVersion: META_VERSIONS.includes(requestedVersion as MetaVersion) ? requestedVersion! : LATEST_META_VERSION,
+    query: (params.get("q") ?? "").slice(0, 80),
+    immortalFilter: DATA.immortals.some((immortal) => immortal.id === immortalId) ? immortalId : "",
+  };
+}
+
 export function RunesReference() {
-  const [mode, setMode] = useState<GameMode>("pve");
-  const [metaVersion, setMetaVersion] = useState<MetaVersion>(LATEST_META_VERSION);
-  const [query, setQuery] = useState("");
-  const [immortalFilter, setImmortalFilter] = useState(() => {
-    const immortalId = new URLSearchParams(window.location.search).get("immortal") ?? "";
-    return DATA.immortals.some((immortal) => immortal.id === immortalId) ? immortalId : "";
-  });
+  const initialState = useMemo(readReferenceState, []);
+  const [mode, setMode] = useState<GameMode>(initialState.mode);
+  const [metaVersion, setMetaVersion] = useState<MetaVersion>(initialState.metaVersion);
+  const [query, setQuery] = useState(initialState.query);
+  const [immortalFilter, setImmortalFilter] = useState(initialState.immortalFilter);
   const ratings = ratingsFor(metaVersion);
   const tableWrapRef = useRef<HTMLDivElement>(null);
   const groupedImmortals = useMemo(() => roles.map((role) => ({
@@ -31,13 +42,32 @@ export function RunesReference() {
   })).filter((group) => group.immortals.length > 0), []);
   const orderedImmortals = groupedImmortals.flatMap((group) => group.immortals);
   const filteredRunes = DATA.runes.filter((rune) => `${rune.name} ${rune.notes} ${rune.tierLabel}`.toLowerCase().includes(query.toLowerCase()));
-  const setFocusedImmortal = (immortalId: string) => {
-    setImmortalFilter(immortalId);
+  const setFocusedImmortal = (immortalId: string) => setImmortalFilter(immortalId);
+
+  useEffect(() => {
     const url = new URL(window.location.href);
-    if (immortalId) url.searchParams.set("immortal", immortalId);
+    if (query) url.searchParams.set("q", query);
+    else url.searchParams.delete("q");
+    if (mode !== "pve") url.searchParams.set("mode", mode);
+    else url.searchParams.delete("mode");
+    if (metaVersion !== LATEST_META_VERSION) url.searchParams.set("version", metaVersion);
+    else url.searchParams.delete("version");
+    if (immortalFilter) url.searchParams.set("immortal", immortalFilter);
     else url.searchParams.delete("immortal");
-    window.history.replaceState(null, "", `${url.pathname}${url.search}`);
-  };
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [immortalFilter, metaVersion, mode, query]);
+
+  useEffect(() => {
+    const restoreFromHistory = () => {
+      const next = readReferenceState();
+      setMode(next.mode);
+      setMetaVersion(next.metaVersion);
+      setQuery(next.query);
+      setImmortalFilter(next.immortalFilter);
+    };
+    window.addEventListener("popstate", restoreFromHistory);
+    return () => window.removeEventListener("popstate", restoreFromHistory);
+  }, []);
 
   useEffect(() => {
     if (!immortalFilter || !tableWrapRef.current) return;
@@ -62,7 +92,7 @@ export function RunesReference() {
           <img src="/assets/ui/rune-smith.png" alt="" />
           <div><h1 id="runes-title">Rune data</h1><p>{DATA.runes.length} runes compared across {DATA.immortals.length} Immortals</p></div>
         </div>
-        <label className="search-field reference-search"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search runes or remarks" /></label>
+        <label className="search-field reference-search"><Search /><input value={query} maxLength={80} onChange={(event) => setQuery(event.target.value)} placeholder="Search runes or remarks" /></label>
         <label className="reference-immortal-filter"><span>Highlight</span><select value={immortalFilter} onChange={(event) => setFocusedImmortal(event.target.value)}><option value="">No Immortal</option>{DATA.immortals.map((immortal) => <option key={immortal.id} value={immortal.id}>{immortal.name}</option>)}</select></label>
         <div className="meta-version-status">
           <label className="meta-version-select">
@@ -74,7 +104,7 @@ export function RunesReference() {
           <span className={`meta-version-indicator ${metaVersion === LATEST_META_VERSION ? "current" : "legacy"}`} role="status">Current: v{metaVersion}{metaVersion === LATEST_META_VERSION ? " (latest)" : " (older)"}</span>
         </div>
         <nav className="reference-mode" aria-label="Rating mode">
-          {modes.map((item) => <button key={item.id} className={mode === item.id ? "active" : ""} onClick={() => setMode(item.id)}>{item.label}</button>)}
+          {modes.map((item) => <button type="button" key={item.id} className={mode === item.id ? "active" : ""} aria-pressed={mode === item.id} onClick={() => setMode(item.id)}>{item.label}</button>)}
         </nav>
       </section>
 
@@ -84,7 +114,12 @@ export function RunesReference() {
         <span className="legend-note">New Guardian ratings marked provisional</span>
       </section>
 
-      <div ref={tableWrapRef} className="runes-table-wrap">
+      <div className="reference-table-summary" aria-live="polite">
+        <strong>{filteredRunes.length} of {DATA.runes.length} runes shown</strong>
+        <span>Swipe sideways to compare Immortals. Rune names stay pinned.</span>
+      </div>
+
+      <div ref={tableWrapRef} className="runes-table-wrap" tabIndex={0} aria-label="Rune recommendation table. Scroll horizontally to compare Immortals.">
         <table className="runes-data-table">
           <thead>
             <tr>

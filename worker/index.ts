@@ -23,15 +23,24 @@ const boardSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 const publishBoardSchema = z.object({ ownerKey: z.string().regex(/^[a-f0-9]{48}$/), board: boardSchema });
+const reportBoardSchema = z.object({
+  reporterKey: z.string().regex(/^[a-f0-9]{48}$/),
+  reason: z.enum(["spam", "inappropriate", "broken"]),
+});
+const boardReportPattern = /^\/api\/boards\/([0-9a-f-]{36})\/report$/i;
 
-function json(body: unknown, status = 200, cacheControl = "no-store") {
-  return Response.json(body, {
+function json(body: unknown, status = 200, cacheControl = "no-store", requestId = crypto.randomUUID()) {
+  const payload = body && typeof body === "object" && "error" in body
+    ? { ...body, requestId }
+    : body;
+  return Response.json(payload, {
     status,
     headers: {
       "Cache-Control": cacheControl,
       "Content-Security-Policy": "default-src 'none'",
       "X-Content-Type-Options": "nosniff",
       "Referrer-Policy": "no-referrer",
+      "X-Request-ID": requestId,
     },
   });
 }
@@ -267,14 +276,33 @@ async function handleBoards(request: Request, env: Env, url: URL, ctx: Execution
     if (cached) return cached;
     const limit = Math.min(24, Math.max(1, Number(url.searchParams.get("limit")) || 18));
     const before = url.searchParams.get("before");
-    if (before && !/^\d{4}-\d{2}-\d{2}T/.test(before)) return json({ error: "Invalid cursor" }, 400);
-    const query = before
-      ? env.DB.prepare("SELECT board_id AS boardId, title, map, players, state_json AS stateJson, updated_at AS updatedAt FROM community_boards WHERE updated_at < ? ORDER BY updated_at DESC LIMIT ?").bind(before, limit)
-      : env.DB.prepare("SELECT board_id AS boardId, title, map, players, state_json AS stateJson, updated_at AS updatedAt FROM community_boards ORDER BY updated_at DESC LIMIT ?").bind(limit);
+    if (before && Number.isNaN(Date.parse(before))) return json({ error: "Invalid cursor" }, 400);
+    const requestedMap = url.searchParams.get("map");
+    const parsedMap = requestedMap ? boardMapSchema.safeParse(requestedMap) : null;
+    if (parsedMap && !parsedMap.success) return json({ error: "Invalid map filter" }, 400);
+    const requestedPlayers = url.searchParams.get("players");
+    if (requestedPlayers && requestedPlayers !== "1" && requestedPlayers !== "2") return json({ error: "Invalid layout filter" }, 400);
+    const search = (url.searchParams.get("q") ?? "").trim().slice(0, 60).toLowerCase();
+    const conditions = ["report_count < 3"];
+    const bindings: Array<string | number> = [];
+    if (before) { conditions.push("updated_at < ?"); bindings.push(before); }
+    if (parsedMap?.success) { conditions.push("map = ?"); bindings.push(parsedMap.data); }
+    if (requestedPlayers) { conditions.push("players = ?"); bindings.push(Number(requestedPlayers)); }
+    if (search) {
+      conditions.push("LOWER(title) LIKE ? ESCAPE '\\'");
+      bindings.push(`%${search.replace(/[\\%_]/g, "\\$&")}%`);
+    }
+    const statement = `SELECT board_id AS boardId, title, map, players, state_json AS stateJson, updated_at AS updatedAt FROM community_boards WHERE ${conditions.join(" AND ")} ORDER BY updated_at DESC LIMIT ?`;
+    const query = env.DB.prepare(statement).bind(...bindings, limit);
     const result = await query.all<{ boardId: string; title: string; map: string; players: number; stateJson: string; updatedAt: string }>();
-    const boards = result.results.map((row) => {
-      const state = JSON.parse(row.stateJson) as z.infer<typeof boardSchema>;
-      return { boardId: row.boardId, title: row.title, map: row.map, players: row.players, slots: state.slots, updatedAt: row.updatedAt };
+    const boards = result.results.flatMap((row) => {
+      try {
+        const state = boardSchema.safeParse(JSON.parse(row.stateJson));
+        if (!state.success) return [];
+        return [{ boardId: row.boardId, title: row.title, map: row.map, players: row.players, slots: state.data.slots, updatedAt: row.updatedAt }];
+      } catch {
+        return [];
+      }
     });
     const nextCursor = boards.length === limit ? boards.at(-1)?.updatedAt ?? null : null;
     const response = json({ boards, nextCursor }, 200, "public, max-age=30, stale-while-revalidate=120");
@@ -301,8 +329,9 @@ async function handleBoards(request: Request, env: Env, url: URL, ctx: Execution
     const now = new Date().toISOString();
     const stateJson = JSON.stringify(parsed.board);
     if (existing) {
-      await env.DB.prepare("UPDATE community_boards SET title = ?, map = ?, players = ?, state_json = ?, updated_at = ? WHERE owner_hash = ?")
+      await env.DB.prepare("UPDATE community_boards SET title = ?, map = ?, players = ?, state_json = ?, report_count = 0, updated_at = ? WHERE owner_hash = ?")
         .bind(parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, ownerHash).run();
+      await env.DB.prepare("DELETE FROM community_board_reports WHERE board_id = ?").bind(boardId).run();
     } else {
       await env.DB.prepare("INSERT INTO community_boards (board_id, owner_hash, title, map, players, state_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
         .bind(boardId, ownerHash, parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, now).run();
@@ -313,15 +342,51 @@ async function handleBoards(request: Request, env: Env, url: URL, ctx: Execution
   return json({ error: "Method not allowed" }, 405);
 }
 
+async function handleBoardReport(request: Request, env: Env, boardId: string) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  let parsed: z.infer<typeof reportBoardSchema>;
+  try { parsed = reportBoardSchema.parse(await readJson(request)); }
+  catch (error) {
+    if (error instanceof Response) return error;
+    return json({ error: "Invalid report" }, 400);
+  }
+  const reporterHash = await sha256(parsed.reporterKey);
+  const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
+  const [reporterLimit, ipLimit] = await Promise.all([
+    env.WRITE_RATE_LIMITER.limit({ key: `board-report:${reporterHash}` }),
+    env.WRITE_RATE_LIMITER.limit({ key: `board-report-ip:${clientIp}` }),
+  ]);
+  if (!reporterLimit.success || !ipLimit.success) return json({ error: "Report rate limit exceeded" }, 429);
+  const board = await env.DB.prepare("SELECT owner_hash FROM community_boards WHERE board_id = ?").bind(boardId).first<{ owner_hash: string }>();
+  if (!board) return json({ error: "Board not found" }, 404);
+  if (secureEqual(board.owner_hash, reporterHash)) return json({ error: "You cannot report your own board" }, 400);
+  const inserted = await env.DB.prepare("INSERT OR IGNORE INTO community_board_reports (board_id, reporter_hash, reason, created_at) VALUES (?, ?, ?, ?)")
+    .bind(boardId, reporterHash, parsed.reason, new Date().toISOString()).run();
+  if ((inserted.meta.changes ?? 0) > 0) {
+    await env.DB.prepare("UPDATE community_boards SET report_count = report_count + 1 WHERE board_id = ?").bind(boardId).run();
+  }
+  return json({ reported: true });
+}
+
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return json({ ok: true, service: "fluz-ld-tools" });
+    const boardReportMatch = boardReportPattern.exec(url.pathname);
+    if (boardReportMatch) {
+      const requestId = crypto.randomUUID();
+      try { return await handleBoardReport(request, env, boardReportMatch[1].toLowerCase()); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "board_report_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return json({ error: "Internal error" }, 500, "no-store", requestId);
+      }
+    }
     if (url.pathname === "/api/boards") {
+      const requestId = crypto.randomUUID();
       try { return await handleBoards(request, env, url, ctx); }
       catch (error) {
-        console.error(JSON.stringify({ event: "boards_error", error: error instanceof Error ? error.message : "unknown" }));
-        return json({ error: "Internal error" }, 500);
+        console.error(JSON.stringify({ event: "boards_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return json({ error: "Internal error" }, 500, "no-store", requestId);
       }
     }
     const match = workspacePattern.exec(url.pathname);
@@ -334,6 +399,9 @@ export default {
     }
   },
   scheduled(_controller, env, ctx) {
-    ctx.waitUntil(env.DB.prepare("DELETE FROM community_boards WHERE updated_at < datetime('now', '-90 days')").run());
+    ctx.waitUntil(env.DB.batch([
+      env.DB.prepare("DELETE FROM community_board_reports WHERE created_at < datetime('now', '-90 days')"),
+      env.DB.prepare("DELETE FROM community_boards WHERE updated_at < datetime('now', '-90 days')"),
+    ]));
   },
 } satisfies ExportedHandler<Env>;

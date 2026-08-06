@@ -1,4 +1,4 @@
-import { Check, Copy, FileDown, FileUp, ImageDown, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users, ZoomOut } from "lucide-react";
+import { Check, Copy, FileDown, FileUp, ImageDown, LoaderCircle, Maximize2, MousePointerClick, Plus, Redo2, Save, Search, Share2, Trash2, Undo2, Users, X, ZoomOut } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent } from "react";
 import { publishBoard } from "../board/api";
 import { decodeSharedBoard, downloadBlob, encodeSharedBoard, renderBoardPng } from "../board/export";
@@ -39,6 +39,8 @@ export function BoardBuilder() {
   const [boardZoom, setBoardZoom] = useState(loadBoardZoom);
   const [draggedSlot, setDraggedSlot] = useState<BoardSlot | null>(null);
   const [dropTarget, setDropTarget] = useState<BoardSlot | null>(null);
+  const [selectedGuardianId, setSelectedGuardianId] = useState<string | null>(null);
+  const [busyAction, setBusyAction] = useState<"png" | "share" | null>(null);
   const [boardCanvasSize, setBoardCanvasSize] = useState<BoardCanvasSize>({ width: 0, height: 0 });
   const fileInput = useRef<HTMLInputElement>(null);
   const channel = useRef<BroadcastChannel | null>(null);
@@ -139,6 +141,8 @@ export function BoardBuilder() {
     return matchesFilter && guardian.name.toLowerCase().includes(query.toLowerCase());
   }), [query, rarity]);
   const activeMap = getBoardMap(board.map);
+  const selectedGuardian = selectedGuardianId ? BOARD_GUARDIANS.find((guardian) => guardian.id === selectedGuardianId) : undefined;
+  const hasBoardContent = board.slots.some((slots) => slots.some(Boolean));
   const boardScale = boardZoom / 100;
   const boardViewportStyle: CSSProperties | undefined = boardCanvasSize.width && boardCanvasSize.height
     ? { width: `${Math.round(boardCanvasSize.width * boardScale)}px`, height: `${Math.round(boardCanvasSize.height * boardScale)}px` }
@@ -162,6 +166,27 @@ export function BoardBuilder() {
 
   const removeGuardian = (player: number, slot: number) => {
     updateBoard((draft) => { draft.slots[player][slot] = null; });
+  };
+
+  const fitBoardToScreen = useCallback(() => {
+    const stage = boardStageRef.current;
+    const canvas = boardCanvasRef.current;
+    if (!stage || !canvas) return;
+    const availableHeight = Math.max(260, window.innerHeight - stage.getBoundingClientRect().top - 28);
+    const naturalHeight = Math.max(1, canvas.offsetHeight);
+    const fitted = Math.floor((availableHeight / naturalHeight) * 100 / 5) * 5;
+    setBoardZoom(Math.min(MAX_BOARD_ZOOM, Math.max(MIN_BOARD_ZOOM, fitted)));
+    setNotice("Board fitted to the available screen space.");
+  }, []);
+
+  const startNewBoard = () => {
+    if (hasBoardContent && !window.confirm("Start a new board? The current unsaved layout will be cleared.")) return;
+    const next = createBoardState();
+    setBoard(next);
+    setPast([]);
+    setFuture([]);
+    setSelectedGuardianId(null);
+    setNotice("New board ready.");
   };
 
   const moveGuardian = (source: BoardSlot, target: BoardSlot) => {
@@ -194,9 +219,11 @@ export function BoardBuilder() {
       const parsed: unknown = JSON.parse(await file.text());
       const migrated = migrateBoardState(parsed);
       if (!migrated) throw new Error("This is not a valid LD board file.");
+      if (hasBoardContent && !window.confirm("Load this board file and replace the current layout?")) return;
       setBoard(migrated);
       setPast([]);
       setFuture([]);
+      setSelectedGuardianId(null);
       setNotice("Board file loaded.");
     } catch (error) { setNotice(error instanceof Error ? error.message : "Could not load that board."); }
     if (fileInput.current) fileInput.current.value = "";
@@ -209,40 +236,52 @@ export function BoardBuilder() {
   };
 
   const exportPng = async () => {
+    if (busyAction) return;
+    setBusyAction("png");
+    setNotice("Preparing your PNG...");
     try {
       const blob = await renderBoardPng(board);
       downloadBlob(blob, `${fileSlug(board.title)}.png`);
       try { await publishBoard(board); setNotice("PNG saved and your latest board was added to Discover."); }
       catch { setNotice("PNG saved. Discover publishing is currently offline."); }
     } catch (error) { setNotice(error instanceof Error ? error.message : "Could not export the PNG."); }
+    finally { setBusyAction(null); }
   };
 
   const share = async () => {
-    const url = new URL("/board-builder", window.location.origin);
-    url.hash = new URLSearchParams({ board: encodeSharedBoard(board) }).toString();
-    await navigator.clipboard.writeText(url.toString());
-    setNotice("Private board link copied.");
+    if (busyAction) return;
+    setBusyAction("share");
+    try {
+      const url = new URL("/board-builder", window.location.origin);
+      url.hash = new URLSearchParams({ board: encodeSharedBoard(board) }).toString();
+      await navigator.clipboard.writeText(url.toString());
+      setNotice("Private board link copied.");
+    } catch {
+      setNotice("Could not copy the link. Check your browser clipboard permission.");
+    } finally { setBusyAction(null); }
   };
 
   if (!loaded) return <div className="board-loading">Loading your board</div>;
 
   return (
-    <main className="board-builder-page">
+    <main className="board-builder-page" id="main-content">
+      <h1 className="visually-hidden">Lucky Defense board builder</h1>
       <section className="board-toolbar">
         <input className="board-title-input" value={board.title} maxLength={80} aria-label="Board title" onChange={(event) => updateBoard((draft) => { draft.title = event.target.value; })} />
         <label className="select-control"><span>Map</span><select value={board.map} onChange={(event) => updateBoard((draft) => { const map = event.target.value as BoardState["map"]; draft.map = map; draft.slots = resizeBoardSlots(draft.slots, map); })}>{BOARD_MAPS.map((map) => <option key={map.id} value={map.id}>{map.name}</option>)}</select></label>
         <div className="segmented-control" aria-label="Number of players"><button className={board.players === 1 ? "active" : ""} onClick={() => updateBoard((draft) => { draft.players = 1; })}>1 player</button><button className={board.players === 2 ? "active" : ""} onClick={() => updateBoard((draft) => { draft.players = 2; })}><Users />2 players</button></div>
         <label className="board-zoom-control" title="Board zoom"><ZoomOut /><input type="range" min={MIN_BOARD_ZOOM} max={MAX_BOARD_ZOOM} step="5" value={boardZoom} onChange={(event) => setBoardZoom(Number(event.target.value))} aria-label="Board zoom" /><span>{boardZoom}%</span></label>
+        <button className="text-button framed board-fit-action" onClick={fitBoardToScreen} title="Fit board to screen"><Maximize2 /><span>Fit</span></button>
         <div className="board-toolbar-actions">
           <button className="icon-button" onClick={undo} disabled={past.length === 0} title="Undo" aria-label="Undo"><Undo2 /></button>
           <button className="icon-button" onClick={redo} disabled={future.length === 0} title="Redo" aria-label="Redo"><Redo2 /></button>
-          <button className="text-button framed" onClick={() => { const next = createBoardState(); setBoard(next); setPast([]); setFuture([]); }} title="New board" aria-label="New board"><Plus /><span>New</span></button>
+          <button className="text-button framed" onClick={startNewBoard} title="New board" aria-label="New board"><Plus /><span>New</span></button>
           <button className="text-button framed" onClick={() => { void saveNamed(); }} title="Save board in this browser" aria-label="Save board"><Save /><span>Save</span></button>
           <button className="text-button framed" onClick={exportFile} title="Save board file" aria-label="Save board file"><FileDown /><span>Save file</span></button>
           <button className="text-button framed" onClick={() => fileInput.current?.click()} title="Load board file" aria-label="Load board file"><FileUp /><span>Load file</span></button>
           <input ref={fileInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => { void loadFile(event.target.files?.[0]); }} />
-          <button className="text-button framed" onClick={() => { void share(); }} title="Copy private board link" aria-label="Share board"><Share2 /><span>Share</span></button>
-          <button className="primary-button compact-action" onClick={() => { void exportPng(); }} title="Export board as PNG" aria-label="Export PNG"><ImageDown /><span>PNG</span></button>
+          <button className="text-button framed" disabled={busyAction !== null} onClick={() => { void share(); }} title="Copy private board link" aria-label="Share board">{busyAction === "share" ? <LoaderCircle className="spin" /> : <Share2 />}<span>Share</span></button>
+          <button className="primary-button compact-action" disabled={busyAction !== null} onClick={() => { void exportPng(); }} title="Export board as PNG" aria-label="Export PNG">{busyAction === "png" ? <LoaderCircle className="spin" /> : <ImageDown />}<span>{busyAction === "png" ? "Exporting" : "PNG"}</span></button>
         </div>
       </section>
 
@@ -253,10 +292,14 @@ export function BoardBuilder() {
           <header><div><h2>Guardians</h2><span>{filteredGuardians.length} available</span></div></header>
           <label className="search-field"><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search guardians" /></label>
           <div className="rarity-tabs">{rarities.map((item) => <button key={item.id} className={rarity === item.id ? "active" : ""} onClick={() => setRarity(item.id)}>{item.label}</button>)}</div>
-          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable className={`rarity-${guardian.rarity}`} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("text/guardian-id", guardian.id); }} title={`Drag ${guardian.name} onto the board`}><img className={`guardian-thumbnail guardian-thumbnail-${guardian.id}`} src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
+          <div className="guardian-grid">{filteredGuardians.map((guardian) => <button key={`${guardian.rarity}-${guardian.id}`} draggable aria-pressed={selectedGuardianId === guardian.id} className={`rarity-${guardian.rarity} ${selectedGuardianId === guardian.id ? "selected" : ""}`} onClick={() => setSelectedGuardianId((current) => current === guardian.id ? null : guardian.id)} onDragStart={(event) => { event.dataTransfer.effectAllowed = "copy"; event.dataTransfer.setData("text/guardian-id", guardian.id); }} title={`Select or drag ${guardian.name} onto the board`}><img className={`guardian-thumbnail guardian-thumbnail-${guardian.id}`} src={guardian.image} alt="" loading="lazy" /><span>{guardian.name}</span></button>)}</div>
         </section>
 
         <section className="board-stage" aria-label="Board canvas" ref={boardStageRef}>
+          <div className={`selection-status ${selectedGuardian ? "active" : ""}`}>
+            <MousePointerClick />
+            {selectedGuardian ? <><span><strong>{selectedGuardian.name}</strong> selected. Tap an empty slot.</span><button onClick={() => setSelectedGuardianId(null)} aria-label="Clear guardian selection"><X /></button></> : <span>Select a Guardian, then tap an empty slot. Dragging also works.</span>}
+          </div>
           <div className="board-zoom-viewport" style={boardViewportStyle}>
             <div className={`interactive-boards players-${board.players}`} ref={boardCanvasRef} style={boardCanvasStyle}>
               {board.slots.slice(0, board.players).map((slots, player) => (
@@ -271,7 +314,10 @@ export function BoardBuilder() {
                       key={slot}
                       draggable={Boolean(guardian)}
                       className={`${guardian ? `filled rarity-${guardian.rarity}` : ""} ${isDragSource ? "drag-source" : ""} ${isDropTarget ? "drop-target" : ""}`}
-                      onClick={() => { if (guardian) removeGuardian(player, slot); }}
+                      onClick={() => {
+                        if (guardian) removeGuardian(player, slot);
+                        else if (selectedGuardianId) placeGuardian(player, slot, selectedGuardianId);
+                      }}
                       onDragStart={(event) => {
                         if (!guardian) return;
                         const source = { player, slot };
@@ -294,7 +340,7 @@ export function BoardBuilder() {
                         setDraggedSlot(null);
                         setDropTarget(null);
                       }}
-                      title={guardian ? `${guardian.name}. Drag to move or click to remove.` : `Empty slot ${slot + 1}. Drag a guardian here.`}>
+                      title={guardian ? `${guardian.name}. Drag to move or click to remove.` : selectedGuardian ? `Place ${selectedGuardian.name} in slot ${slot + 1}.` : `Empty slot ${slot + 1}. Select or drag a guardian here.`}>
                       <span>{slot + 1}</span>{guardian && <img src={guardian.image} alt={guardian.name} />}
                     </button>;
                   })}</div>
@@ -306,7 +352,7 @@ export function BoardBuilder() {
 
         <aside className="saved-boards-panel">
           <header><div><h2>Saved boards</h2><span>Stored in this browser</span></div></header>
-          {savedBoards.length === 0 ? <div className="saved-empty">Your named saves will appear here.</div> : <div className="saved-board-list">{savedBoards.map((saved) => <article key={saved.id}><button className="saved-board-load" onClick={() => { const migrated = migrateBoardState(saved); if (migrated) { setBoard(migrated); setPast([]); setFuture([]); } }}><strong>{saved.title}</strong><span>{getBoardMap(saved.map).name} - {saved.players}P</span></button><button className="icon-button quiet" onClick={() => { void deleteBoardSnapshot(saved.id).then(refreshSaved); }} title="Delete saved board" aria-label={`Delete ${saved.title}`}><Trash2 /></button></article>)}</div>}
+          {savedBoards.length === 0 ? <div className="saved-empty">Your named saves will appear here.</div> : <div className="saved-board-list">{savedBoards.map((saved) => <article key={saved.id}><button className="saved-board-load" onClick={() => { const migrated = migrateBoardState(saved); if (migrated) { setBoard(migrated); setPast([]); setFuture([]); setSelectedGuardianId(null); setNotice(`Loaded ${saved.title}.`); } }}><strong>{saved.title}</strong><span>{getBoardMap(saved.map).name} - {saved.players}P</span></button><button className="icon-button quiet" onClick={() => { if (window.confirm(`Delete the saved board “${saved.title}”?`)) void deleteBoardSnapshot(saved.id).then(refreshSaved); }} title="Delete saved board" aria-label={`Delete ${saved.title}`}><Trash2 /></button></article>)}</div>}
           <div className="saved-panel-tip"><Copy /> Shared links contain the board layout. No account is needed.</div>
         </aside>
       </div>

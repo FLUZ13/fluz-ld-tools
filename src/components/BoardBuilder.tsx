@@ -242,8 +242,7 @@ export function BoardBuilder() {
     try {
       const blob = await renderBoardPng(board);
       downloadBlob(blob, `${fileSlug(board.title)}.png`);
-      try { await publishBoard(board); setNotice("PNG saved and your latest board was added to Discover."); }
-      catch { setNotice("PNG saved. Discover publishing is currently offline."); }
+      setNotice("PNG saved.");
     } catch (error) { setNotice(error instanceof Error ? error.message : "Could not export the PNG."); }
     finally { setBusyAction(null); }
   };
@@ -252,12 +251,17 @@ export function BoardBuilder() {
     if (busyAction) return;
     setBusyAction("share");
     try {
+      await publishBoard(board);
       const url = new URL("/board-builder", window.location.origin);
       url.hash = new URLSearchParams({ board: encodeSharedBoard(board) }).toString();
-      await navigator.clipboard.writeText(url.toString());
-      setNotice("Private board link copied.");
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        setNotice("Shared to Discover. Board link copied.");
+      } catch {
+        setNotice("Shared to Discover.");
+      }
     } catch {
-      setNotice("Could not copy the link. Check your browser clipboard permission.");
+      setNotice("Could not share your board to Discover. Please try again shortly.");
     } finally { setBusyAction(null); }
   };
 
@@ -280,7 +284,7 @@ export function BoardBuilder() {
           <button className="text-button framed" onClick={exportFile} title="Save board file" aria-label="Save board file"><FileDown /><span>Save file</span></button>
           <button className="text-button framed" onClick={() => fileInput.current?.click()} title="Load board file" aria-label="Load board file"><FileUp /><span>Load file</span></button>
           <input ref={fileInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => { void loadFile(event.target.files?.[0]); }} />
-          <button className="text-button framed" disabled={busyAction !== null} onClick={() => { void share(); }} title="Copy private board link" aria-label="Share board">{busyAction === "share" ? <LoaderCircle className="spin" /> : <Share2 />}<span>Share</span></button>
+          <button className="text-button framed discover-share-button" disabled={busyAction !== null} onClick={() => { void share(); }} title="Share this board to Discover" aria-label="Share board to Discover">{busyAction === "share" ? <LoaderCircle className="spin" /> : <Share2 />}<span>Share</span></button>
           <button className="primary-button compact-action" disabled={busyAction !== null} onClick={() => { void exportPng(); }} title="Export board as PNG" aria-label="Export PNG">{busyAction === "png" ? <LoaderCircle className="spin" /> : <ImageDown />}<span>{busyAction === "png" ? "Exporting" : "PNG"}</span></button>
         </div>
       </section>

@@ -1,3 +1,4 @@
+import { type CSSProperties } from "react";
 import { BOARD_GUARDIAN_BY_ID, getBoardMap, type PublishedBoard } from "../board/model";
 
 interface BoardPreviewProps {
@@ -7,10 +8,21 @@ interface BoardPreviewProps {
 
 export function BoardPreview({ board, compact = false }: BoardPreviewProps) {
   const map = getBoardMap(board.map);
+  const previewStyle = {
+    "--preview-aspect": String(map.aspectRatio),
+    "--preview-grid-columns": String(map.columns),
+    "--preview-grid-rows": String(map.rows),
+    "--preview-grid-top": `${map.gridInset.top}%`,
+    "--preview-grid-right": `${map.gridInset.right}%`,
+    "--preview-grid-bottom": `${map.gridInset.bottom}%`,
+    "--preview-grid-left": `${map.gridInset.left}%`,
+  } as CSSProperties;
+
   return (
-    <div className={`board-preview ${compact ? "compact" : ""}`} style={{ backgroundImage: `linear-gradient(rgba(53,43,34,.22), rgba(53,43,34,.42)), url(${map.image})` }}>
+    <div className={`board-preview ${compact ? "compact" : ""} players-${board.players}`}>
       {board.slots.slice(0, board.players).map((slots, player) => (
-        <div className="preview-player" key={player}>
+        <div className="preview-player" style={previewStyle} key={player}>
+          <img className="preview-map" src={map.image} alt="" aria-hidden="true" />
           <span className="player-label">P{player + 1}</span>
           <div className="preview-grid">
             {slots.map((guardianId, index) => {

@@ -324,19 +324,14 @@ async function handleBoards(request: Request, env: Env, url: URL, ctx: Execution
       env.WRITE_RATE_LIMITER.limit({ key: `board-ip:${clientIp}` }),
     ]);
     if (!ownerRateLimit.success || !ipRateLimit.success) return json({ error: "Rate limit exceeded" }, 429);
-    const existing = await env.DB.prepare("SELECT board_id FROM community_boards WHERE owner_hash = ?").bind(ownerHash).first<{ board_id: string }>();
-    const boardId = existing?.board_id ?? crypto.randomUUID();
+    const boardId = crypto.randomUUID();
     const now = new Date().toISOString();
     const stateJson = JSON.stringify(parsed.board);
-    if (existing) {
-      await env.DB.prepare("UPDATE community_boards SET title = ?, map = ?, players = ?, state_json = ?, report_count = 0, updated_at = ? WHERE owner_hash = ?")
-        .bind(parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, ownerHash).run();
-      await env.DB.prepare("DELETE FROM community_board_reports WHERE board_id = ?").bind(boardId).run();
-    } else {
-      await env.DB.prepare("INSERT INTO community_boards (board_id, owner_hash, title, map, players, state_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
-        .bind(boardId, ownerHash, parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, now).run();
-    }
-    return json({ boardId, updatedAt: now }, existing ? 200 : 201);
+    await env.DB.prepare("INSERT INTO community_boards (board_id, owner_hash, title, map, players, state_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(boardId, ownerHash, parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, now).run();
+    const boardCache = await caches.open("community-boards");
+    ctx.waitUntil(boardCache.delete(new Request(new URL("/api/boards?limit=18", request.url))));
+    return json({ boardId, updatedAt: now }, 201);
   }
 
   return json({ error: "Method not allowed" }, 405);

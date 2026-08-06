@@ -81,7 +81,7 @@ export function DiscoverBoards() {
   return (
     <main className="discover-page" id="main-content">
       <section className="discover-heading">
-        <div><h1>Community boards</h1><p>One latest export per anonymous browser, so repeat exports never flood the gallery.</p></div>
+        <div><h1>Community boards</h1><p>Boards shared by the community. Every Share adds a new board to the gallery.</p></div>
         <a className="primary-button" href="/board-builder">Build a board</a>
       </section>
       <section className="discover-filters">

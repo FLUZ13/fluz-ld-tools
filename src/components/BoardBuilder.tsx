@@ -15,13 +15,7 @@ const rarities: Array<{ id: GuardianFilter; label: string }> = [
 ];
 const MIN_BOARD_ZOOM = 55;
 const MAX_BOARD_ZOOM = 100;
-
-function loadBoardZoom() {
-  const stored = localStorage.getItem("ld-board-zoom");
-  if (stored === null) return 75;
-  const saved = Number(stored);
-  return Number.isFinite(saved) ? Math.min(MAX_BOARD_ZOOM, Math.max(MIN_BOARD_ZOOM, saved)) : 75;
-}
+const DEFAULT_BOARD_ZOOM = 90;
 
 function fileSlug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "lucky-defense-board";
@@ -36,7 +30,7 @@ export function BoardBuilder() {
   const [notice, setNotice] = useState("");
   const [past, setPast] = useState<BoardState[]>([]);
   const [future, setFuture] = useState<BoardState[]>([]);
-  const [boardZoom, setBoardZoom] = useState(loadBoardZoom);
+  const [boardZoom, setBoardZoom] = useState(DEFAULT_BOARD_ZOOM);
   const [draggedSlot, setDraggedSlot] = useState<BoardSlot | null>(null);
   const [dropTarget, setDropTarget] = useState<BoardSlot | null>(null);
   const [selectedGuardianId, setSelectedGuardianId] = useState<string | null>(null);
@@ -84,10 +78,6 @@ export function BoardBuilder() {
     }, 300);
     return () => window.clearTimeout(timeout);
   }, [board, loaded]);
-
-  useEffect(() => {
-    localStorage.setItem("ld-board-zoom", String(boardZoom));
-  }, [boardZoom]);
 
   useLayoutEffect(() => {
     const stage = boardStageRef.current;

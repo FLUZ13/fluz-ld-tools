@@ -1,9 +1,71 @@
-import { Check, Clock3, Copy, ExternalLink, Flag, RefreshCw, Search } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { BoardApiError, fetchPublishedBoards, reportPublishedBoard } from "../board/api";
+import { Check, Clock3, Copy, ExternalLink, Flag, LoaderCircle, MessageCircle, RefreshCw, Search, Send, X } from "lucide-react";
+import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { BoardApiError, fetchPublishedBoardComments, fetchPublishedBoards, postPublishedBoardComment, reportPublishedBoard, type PublishedBoardComment } from "../board/api";
 import { encodeSharedBoard } from "../board/export";
 import { BOARD_MAPS, getBoardMap, normalizeBoardMapId, type BoardState, type PublishedBoard } from "../board/model";
 import { BoardPreview } from "./BoardPreview";
+
+interface BoardCommentsProps {
+  board: PublishedBoard;
+  onCommentAdded: (boardId: string) => void;
+}
+
+function BoardComments({ board, onCommentAdded }: BoardCommentsProps) {
+  const [comments, setComments] = useState<PublishedBoardComment[]>([]);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(board.commentCount > 0);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (board.commentCount === 0) {
+      setComments([]);
+      setLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setLoading(true);
+    void fetchPublishedBoardComments(board.boardId, controller.signal)
+      .then((result) => { if (!controller.signal.aborted) setComments(result.comments); })
+      .catch((loadError: unknown) => {
+        if (!controller.signal.aborted) setError(loadError instanceof Error ? loadError.message : "Could not load comments.");
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [board.boardId, board.commentCount]);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const body = message.trim();
+    if (!body || sending) return;
+    setSending(true);
+    setError("");
+    try {
+      const result = await postPublishedBoardComment(board.boardId, body);
+      setComments((current) => [...current, result.comment]);
+      setMessage("");
+      onCommentAdded(board.boardId);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "Could not post this comment.");
+    } finally { setSending(false); }
+  };
+
+  return (
+    <section className="discover-comments" aria-label={`Comments for ${board.title}`}>
+      <div className="discover-comments-heading"><strong><MessageCircle />Comments {board.commentCount > 0 ? `(${board.commentCount})` : ""}</strong><span>Anonymous</span></div>
+      {loading && <p className="comments-status"><LoaderCircle />Loading comments...</p>}
+      {!loading && comments.length > 0 && <ul className="comment-list">{comments.map((comment) => <li key={comment.commentId}><p>{comment.body}</p><time dateTime={comment.createdAt}>{new Date(comment.createdAt).toLocaleDateString()}</time></li>)}</ul>}
+      {!loading && comments.length === 0 && <p className="comments-empty">No comments yet.</p>}
+      {error && <p className="comments-error" role="alert">{error}</p>}
+      <form className="comment-compose" onSubmit={submit}>
+        <label className="sr-only" htmlFor={`comment-${board.boardId}`}>Add a comment</label>
+        <input id={`comment-${board.boardId}`} value={message} onChange={(event) => setMessage(event.target.value)} maxLength={500} placeholder="Add a comment" aria-describedby={`${board.boardId}-comment-limit`} />
+        <button className="icon-button" type="submit" disabled={!message.trim() || sending} title="Post comment" aria-label="Post comment">{sending ? <LoaderCircle /> : <Send />}</button>
+      </form>
+      <small id={`${board.boardId}-comment-limit`}>{message.length}/500</small>
+    </section>
+  );
+}
 
 export function DiscoverBoards() {
   const [boards, setBoards] = useState<PublishedBoard[]>([]);
@@ -16,6 +78,7 @@ export function DiscoverBoards() {
   const [error, setError] = useState("");
   const [copiedId, setCopiedId] = useState("");
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(() => new Set());
+  const [commentsBoard, setCommentsBoard] = useState<PublishedBoard | null>(null);
 
   const filters = { map: map === "all" ? undefined : map, players: players === "all" ? undefined : players as "1" | "2", query };
 
@@ -54,7 +117,15 @@ export function DiscoverBoards() {
     return () => { window.clearTimeout(timeout); controller.abort(); };
   }, [query, map, players, refresh]);
 
+  useEffect(() => {
+    if (!commentsBoard) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === "Escape") setCommentsBoard(null); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [commentsBoard]);
+
   const visibleBoards = boards.filter((board) => !hiddenIds.has(board.boardId));
+  const activeCommentsBoard = commentsBoard ? boards.find((board) => board.boardId === commentsBoard.boardId) ?? commentsBoard : null;
 
   const boardUrl = (board: PublishedBoard) => {
     const state: BoardState = { schemaVersion: 1, id: board.boardId, title: board.title, map: normalizeBoardMapId(board.map), players: board.players, slots: board.slots, updatedAt: board.updatedAt };
@@ -73,9 +144,11 @@ export function DiscoverBoards() {
     if (!window.confirm(`Hide and report "${board.title}" as inappropriate or spam?`)) return;
     setHiddenIds((current) => new Set(current).add(board.boardId));
     try { await reportPublishedBoard(board.boardId, "inappropriate"); }
-    catch (reportError) {
-      setError(reportError instanceof Error ? reportError.message : "Could not report this board.");
-    }
+    catch (reportError) { setError(reportError instanceof Error ? reportError.message : "Could not report this board."); }
+  };
+
+  const increaseCommentCount = (boardId: string) => {
+    setBoards((current) => current.map((board) => board.boardId === boardId ? { ...board, commentCount: board.commentCount + 1 } : board));
   };
 
   return (
@@ -95,10 +168,12 @@ export function DiscoverBoards() {
       <section className="discover-grid">{visibleBoards.map((board) => (
         <article className="discover-card" key={board.boardId}>
           <BoardPreview board={board} compact />
-          <div className="discover-card-copy"><div><h2>{board.title}</h2><span><Clock3 />{new Date(board.updatedAt).toLocaleDateString()} - {getBoardMap(board.map).name} - {board.players}P</span></div><div className="discover-actions"><button className="icon-button" onClick={() => { void copyBoardLink(board); }} title="Copy board link" aria-label={copiedId === board.boardId ? "Board link copied" : "Copy board link"}>{copiedId === board.boardId ? <Check /> : <Copy />}</button><a className="icon-button" href={boardUrl(board)} title="Open in board builder" aria-label="Open in board builder"><ExternalLink /></a><button className="icon-button report-button" onClick={() => { void reportBoard(board); }} title="Hide and report board" aria-label="Hide and report board"><Flag /></button></div></div>
+          <div className="discover-card-copy"><div><h2>{board.title}</h2><span><Clock3 />{new Date(board.updatedAt).toLocaleDateString()} - {getBoardMap(board.map).name} - {board.players}P</span></div><div className="discover-actions"><button className="icon-button" onClick={() => { void copyBoardLink(board); }} title="Copy board link" aria-label={copiedId === board.boardId ? "Board link copied" : "Copy board link"}>{copiedId === board.boardId ? <Check /> : <Copy />}</button>{board.players === 2 && <button className="icon-button" onClick={() => setCommentsBoard(board)} title="Comments" aria-label={`Comments (${board.commentCount})`}><MessageCircle /></button>}<a className="icon-button" href={boardUrl(board)} title="Open in board builder" aria-label="Open in board builder"><ExternalLink /></a><button className="icon-button report-button" onClick={() => { void reportBoard(board); }} title="Hide and report board" aria-label="Hide and report board"><Flag /></button></div></div>
+          {board.players === 1 && <BoardComments board={board} onCommentAdded={increaseCommentCount} />}
         </article>
       ))}</section>
       {cursor && !error && <button className="secondary-button discover-more" disabled={loadingMore} onClick={() => { void loadMore(); }}>{loadingMore ? "Loading..." : "Load more"}</button>}
+      {activeCommentsBoard && <div className="comments-dialog-backdrop" role="presentation" onMouseDown={() => setCommentsBoard(null)}><section className="comments-dialog" role="dialog" aria-modal="true" aria-labelledby="board-comments-title" onMouseDown={(event) => event.stopPropagation()}><header><div><h2 id="board-comments-title">Comments</h2><p>{activeCommentsBoard.title}</p></div><button className="icon-button" onClick={() => setCommentsBoard(null)} aria-label="Close comments"><X /></button></header><BoardComments board={activeCommentsBoard} onCommentAdded={increaseCommentCount} /></section></div>}
     </main>
   );
 }

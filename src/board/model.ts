@@ -28,6 +28,7 @@ export interface PublishedBoard {
   players: BoardPlayerCount;
   slots: BoardState["slots"];
   updatedAt: string;
+  commentCount: number;
 }
 
 export interface BoardMap {
@@ -153,5 +154,5 @@ export function isBoardState(value: unknown): value is BoardState {
 }
 
 export function boardToPublished(board: BoardState, boardId = board.id): PublishedBoard {
-  return { boardId, title: board.title, map: normalizeBoardMapId(board.map), players: board.players, slots: board.slots, updatedAt: board.updatedAt };
+  return { boardId, title: board.title, map: normalizeBoardMapId(board.map), players: board.players, slots: board.slots, updatedAt: board.updatedAt, commentCount: 0 };
 }

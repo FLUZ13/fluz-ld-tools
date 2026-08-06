@@ -38,7 +38,7 @@ export interface PublishedBoardFilters {
 }
 
 export async function fetchPublishedBoards(filters: PublishedBoardFilters = {}) {
-  const query = new URLSearchParams({ limit: "18" });
+  const query = new URLSearchParams({ limit: "18", v: "3" });
   if (filters.before) query.set("before", filters.before);
   if (filters.map) query.set("map", filters.map);
   if (filters.players) query.set("players", filters.players);
@@ -55,4 +55,26 @@ export async function reportPublishedBoard(boardId: string, reason: "spam" | "in
     body: JSON.stringify({ reporterKey: getBoardOwnerKey(), reason }),
   });
   if (!response.ok) throw await apiError(response, "Could not report this board.");
+}
+
+export interface PublishedBoardComment {
+  commentId: string;
+  body: string;
+  createdAt: string;
+}
+
+export async function fetchPublishedBoardComments(boardId: string, signal?: AbortSignal) {
+  const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/comments`, { cache: "no-cache", signal });
+  if (!response.ok) throw await apiError(response, "Could not load board comments.");
+  return response.json() as Promise<{ comments: PublishedBoardComment[] }>;
+}
+
+export async function postPublishedBoardComment(boardId: string, body: string) {
+  const response = await fetch(`/api/boards/${encodeURIComponent(boardId)}/comments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ commenterKey: getBoardOwnerKey(), body }),
+  });
+  if (!response.ok) throw await apiError(response, response.status === 429 ? "Comments are temporarily rate limited." : "Could not post this comment.");
+  return response.json() as Promise<{ comment: PublishedBoardComment }>;
 }

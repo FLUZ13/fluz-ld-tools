@@ -27,7 +27,12 @@ const reportBoardSchema = z.object({
   reporterKey: z.string().regex(/^[a-f0-9]{48}$/),
   reason: z.enum(["spam", "inappropriate", "broken"]),
 });
+const boardCommentSchema = z.object({
+  commenterKey: z.string().regex(/^[a-f0-9]{48}$/),
+  body: z.string().trim().min(1).max(500),
+});
 const boardReportPattern = /^\/api\/boards\/([0-9a-f-]{36})\/report$/i;
+const boardCommentPattern = /^\/api\/boards\/([0-9a-f-]{36})\/comments$/i;
 
 function json(body: unknown, status = 200, cacheControl = "no-store", requestId = crypto.randomUUID()) {
   const payload = body && typeof body === "object" && "error" in body
@@ -269,6 +274,13 @@ async function handleSync(request: Request, env: Env, workspaceId: string, actio
   return json({ error: "Method not allowed" }, 405);
 }
 
+async function invalidateBoardListCache(request: Request, ctx: ExecutionContext) {
+  const boardCache = await caches.open("community-boards");
+  const cached = await boardCache.keys();
+  const boardListEntries = cached.filter((entry) => new URL(entry.url).pathname === "/api/boards");
+  ctx.waitUntil(Promise.all(boardListEntries.map((entry) => boardCache.delete(entry))));
+}
+
 async function handleBoards(request: Request, env: Env, url: URL, ctx: ExecutionContext) {
   if (request.method === "GET") {
     const boardCache = await caches.open("community-boards");
@@ -283,23 +295,23 @@ async function handleBoards(request: Request, env: Env, url: URL, ctx: Execution
     const requestedPlayers = url.searchParams.get("players");
     if (requestedPlayers && requestedPlayers !== "1" && requestedPlayers !== "2") return json({ error: "Invalid layout filter" }, 400);
     const search = (url.searchParams.get("q") ?? "").trim().slice(0, 60).toLowerCase();
-    const conditions = ["report_count < 3"];
+    const conditions = ["b.report_count < 3"];
     const bindings: Array<string | number> = [];
-    if (before) { conditions.push("updated_at < ?"); bindings.push(before); }
-    if (parsedMap?.success) { conditions.push("map = ?"); bindings.push(parsedMap.data); }
-    if (requestedPlayers) { conditions.push("players = ?"); bindings.push(Number(requestedPlayers)); }
+    if (before) { conditions.push("b.updated_at < ?"); bindings.push(before); }
+    if (parsedMap?.success) { conditions.push("b.map = ?"); bindings.push(parsedMap.data); }
+    if (requestedPlayers) { conditions.push("b.players = ?"); bindings.push(Number(requestedPlayers)); }
     if (search) {
-      conditions.push("LOWER(title) LIKE ? ESCAPE '\\'");
+      conditions.push("LOWER(b.title) LIKE ? ESCAPE '\\'");
       bindings.push(`%${search.replace(/[\\%_]/g, "\\$&")}%`);
     }
-    const statement = `SELECT board_id AS boardId, title, map, players, state_json AS stateJson, updated_at AS updatedAt FROM community_boards WHERE ${conditions.join(" AND ")} ORDER BY updated_at DESC LIMIT ?`;
+    const statement = `SELECT b.board_id AS boardId, b.title, b.map, b.players, b.state_json AS stateJson, b.updated_at AS updatedAt, (SELECT COUNT(*) FROM community_board_comments c WHERE c.board_id = b.board_id) AS commentCount FROM community_boards b WHERE ${conditions.join(" AND ")} ORDER BY b.updated_at DESC LIMIT ?`;
     const query = env.DB.prepare(statement).bind(...bindings, limit);
-    const result = await query.all<{ boardId: string; title: string; map: string; players: number; stateJson: string; updatedAt: string }>();
+    const result = await query.all<{ boardId: string; title: string; map: string; players: number; stateJson: string; updatedAt: string; commentCount: number }>();
     const boards = result.results.flatMap((row) => {
       try {
         const state = boardSchema.safeParse(JSON.parse(row.stateJson));
         if (!state.success) return [];
-        return [{ boardId: row.boardId, title: row.title, map: row.map, players: row.players, slots: state.data.slots, updatedAt: row.updatedAt }];
+        return [{ boardId: row.boardId, title: row.title, map: row.map, players: row.players, slots: state.data.slots, updatedAt: row.updatedAt, commentCount: Number(row.commentCount) || 0 }];
       } catch {
         return [];
       }
@@ -329,15 +341,14 @@ async function handleBoards(request: Request, env: Env, url: URL, ctx: Execution
     const stateJson = JSON.stringify(parsed.board);
     await env.DB.prepare("INSERT INTO community_boards (board_id, owner_hash, title, map, players, state_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
       .bind(boardId, ownerHash, parsed.board.title, parsed.board.map, parsed.board.players, stateJson, now, now).run();
-    const boardCache = await caches.open("community-boards");
-    ctx.waitUntil(boardCache.delete(new Request(new URL("/api/boards?limit=18", request.url))));
+    await invalidateBoardListCache(request, ctx);
     return json({ boardId, updatedAt: now }, 201);
   }
 
   return json({ error: "Method not allowed" }, 405);
 }
 
-async function handleBoardReport(request: Request, env: Env, boardId: string) {
+async function handleBoardReport(request: Request, env: Env, boardId: string, ctx: ExecutionContext) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   let parsed: z.infer<typeof reportBoardSchema>;
   try { parsed = reportBoardSchema.parse(await readJson(request)); }
@@ -359,18 +370,64 @@ async function handleBoardReport(request: Request, env: Env, boardId: string) {
     .bind(boardId, reporterHash, parsed.reason, new Date().toISOString()).run();
   if ((inserted.meta.changes ?? 0) > 0) {
     await env.DB.prepare("UPDATE community_boards SET report_count = report_count + 1 WHERE board_id = ?").bind(boardId).run();
+    await invalidateBoardListCache(request, ctx);
   }
   return json({ reported: true });
+}
+
+async function handleBoardComments(request: Request, env: Env, boardId: string, ctx: ExecutionContext) {
+  if (request.method === "GET") {
+    const board = await env.DB.prepare("SELECT 1 FROM community_boards WHERE board_id = ? AND report_count < 3").bind(boardId).first();
+    if (!board) return json({ error: "Board not found" }, 404);
+    const result = await env.DB.prepare("SELECT comment_id AS commentId, body, created_at AS createdAt FROM community_board_comments WHERE board_id = ? ORDER BY created_at ASC LIMIT 40")
+      .bind(boardId).all<{ commentId: string; body: string; createdAt: string }>();
+    return json({ comments: result.results }, 200, "public, max-age=20, stale-while-revalidate=60");
+  }
+
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  let parsed: z.infer<typeof boardCommentSchema>;
+  try { parsed = boardCommentSchema.parse(await readJson(request)); }
+  catch (error) {
+    if (error instanceof Response) return error;
+    return json({ error: "Invalid comment" }, 400);
+  }
+  const commenterHash = await sha256(parsed.commenterKey);
+  const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
+  const [commenterLimit, ipLimit] = await Promise.all([
+    env.WRITE_RATE_LIMITER.limit({ key: `board-comment:${commenterHash}` }),
+    env.WRITE_RATE_LIMITER.limit({ key: `board-comment-ip:${clientIp}` }),
+  ]);
+  if (!commenterLimit.success || !ipLimit.success) return json({ error: "Comment rate limit exceeded" }, 429);
+  const board = await env.DB.prepare("SELECT 1 FROM community_boards WHERE board_id = ? AND report_count < 3").bind(boardId).first();
+  if (!board) return json({ error: "Board not found" }, 404);
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const recent = await env.DB.prepare("SELECT COUNT(*) AS count FROM community_board_comments WHERE commenter_hash = ? AND created_at > ?")
+    .bind(commenterHash, hourAgo).first<{ count: number }>();
+  if (Number(recent?.count ?? 0) >= 10) return json({ error: "You can post up to 10 comments per hour" }, 429);
+  const comment = { commentId: crypto.randomUUID(), body: parsed.body, createdAt: new Date().toISOString() };
+  await env.DB.prepare("INSERT INTO community_board_comments (comment_id, board_id, commenter_hash, body, created_at) VALUES (?, ?, ?, ?, ?)")
+    .bind(comment.commentId, boardId, commenterHash, comment.body, comment.createdAt).run();
+  await invalidateBoardListCache(request, ctx);
+  return json({ comment }, 201);
 }
 
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return json({ ok: true, service: "fluz-ld-tools" });
+    const boardCommentMatch = boardCommentPattern.exec(url.pathname);
+    if (boardCommentMatch) {
+      const requestId = crypto.randomUUID();
+      try { return await handleBoardComments(request, env, boardCommentMatch[1].toLowerCase(), ctx); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "board_comment_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return json({ error: "Internal error" }, 500, "no-store", requestId);
+      }
+    }
     const boardReportMatch = boardReportPattern.exec(url.pathname);
     if (boardReportMatch) {
       const requestId = crypto.randomUUID();
-      try { return await handleBoardReport(request, env, boardReportMatch[1].toLowerCase()); }
+      try { return await handleBoardReport(request, env, boardReportMatch[1].toLowerCase(), ctx); }
       catch (error) {
         console.error(JSON.stringify({ event: "board_report_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
         return json({ error: "Internal error" }, 500, "no-store", requestId);
@@ -395,6 +452,7 @@ export default {
   },
   scheduled(_controller, env, ctx) {
     ctx.waitUntil(env.DB.batch([
+      env.DB.prepare("DELETE FROM community_board_comments WHERE created_at < datetime('now', '-90 days')"),
       env.DB.prepare("DELETE FROM community_board_reports WHERE created_at < datetime('now', '-90 days')"),
       env.DB.prepare("DELETE FROM community_boards WHERE updated_at < datetime('now', '-90 days')"),
     ]));

@@ -275,10 +275,18 @@ async function handleSync(request: Request, env: Env, workspaceId: string, actio
 }
 
 async function invalidateBoardListCache(request: Request, ctx: ExecutionContext) {
-  const boardCache = await caches.open("community-boards");
-  const cached = await boardCache.keys();
-  const boardListEntries = cached.filter((entry) => new URL(entry.url).pathname === "/api/boards");
-  ctx.waitUntil(Promise.all(boardListEntries.map((entry) => boardCache.delete(entry))));
+  // Cache invalidation is helpful, but a Cache API hiccup must never turn a
+  // successfully saved board, report, or comment into a failed request.
+  ctx.waitUntil((async () => {
+    try {
+      const boardCache = await caches.open("community-boards");
+      const cached = await boardCache.keys();
+      const boardListEntries = cached.filter((entry) => new URL(entry.url).pathname === "/api/boards");
+      await Promise.all(boardListEntries.map((entry) => boardCache.delete(entry)));
+    } catch (error) {
+      console.warn(JSON.stringify({ event: "board_cache_invalidation_error", error: error instanceof Error ? error.message : "unknown" }));
+    }
+  })());
 }
 
 async function handleBoards(request: Request, env: Env, url: URL, ctx: ExecutionContext) {

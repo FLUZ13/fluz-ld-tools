@@ -13,20 +13,21 @@ interface BoardCommentsProps {
 function BoardComments({ board, onCommentAdded }: BoardCommentsProps) {
   const [comments, setComments] = useState<PublishedBoardComment[]>([]);
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(board.commentCount > 0);
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (board.commentCount === 0) {
-      setComments([]);
-      setLoading(false);
-      return;
-    }
     const controller = new AbortController();
     setLoading(true);
+    setError("");
     void fetchPublishedBoardComments(board.boardId, controller.signal)
-      .then((result) => { if (!controller.signal.aborted) setComments(result.comments); })
+      .then((result) => {
+        if (!controller.signal.aborted) {
+          setComments(result.comments);
+          setError("");
+        }
+      })
       .catch((loadError: unknown) => {
         if (!controller.signal.aborted) setError(loadError instanceof Error ? loadError.message : "Could not load comments.");
       })

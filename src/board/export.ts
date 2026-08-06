@@ -7,20 +7,13 @@ const loadImage = (source: string) => new Promise<HTMLImageElement>((resolve, re
   image.src = source;
 });
 
-function drawCover(context: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number, height: number) {
-  const scale = Math.max(width / image.width, height / image.height);
-  const sourceWidth = width / scale;
-  const sourceHeight = height / scale;
-  context.drawImage(image, (image.width - sourceWidth) / 2, (image.height - sourceHeight) / 2, sourceWidth, sourceHeight, x, y, width, height);
-}
-
 export async function renderBoardPng(board: BoardState) {
   const width = 1200;
   const map = getBoardMap(board.map);
-  const cell = 103;
-  const gap = 10;
-  const boardHeight = 70 + map.rows * (cell + gap);
-  const height = 112 + board.players * boardHeight + (board.players - 1) * 18 + 42;
+  const mapWidth = width - 90;
+  const mapHeight = Math.round(mapWidth / map.aspectRatio);
+  const boardGap = 26;
+  const height = 112 + board.players * mapHeight + (board.players - 1) * boardGap + 44;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -45,37 +38,44 @@ export async function renderBoardPng(board: BoardState) {
   }));
 
   for (let player = 0; player < board.players; player += 1) {
-    const x = 35;
-    const y = 112 + player * (boardHeight + 18);
-    const sectionWidth = width - 70;
-    drawCover(context, mapImage, x, y, sectionWidth, boardHeight);
-    context.fillStyle = "rgba(44, 31, 23, .35)";
-    context.fillRect(x, y, sectionWidth, boardHeight);
-    context.strokeStyle = "#d9ae58";
-    context.lineWidth = 5;
-    context.strokeRect(x, y, sectionWidth, boardHeight);
-    context.fillStyle = "rgba(53, 43, 34, .82)";
-    context.fillRect(x + 12, y + 12, 120, 36);
-    context.fillStyle = "#fff1d1";
-    context.font = "700 18px Arial";
-    context.fillText(`PLAYER ${player + 1}`, x + 27, y + 37);
+    const x = (width - mapWidth) / 2;
+    const y = 112 + player * (mapHeight + boardGap);
+    context.save();
+    context.shadowColor = "rgba(18, 12, 8, .45)";
+    context.shadowBlur = 16;
+    context.shadowOffsetY = 10;
+    context.drawImage(mapImage, x, y, mapWidth, mapHeight);
+    context.restore();
 
-    const gridWidth = map.columns * cell + (map.columns - 1) * gap;
-    const gridX = x + (sectionWidth - gridWidth) / 2;
-    const gridY = y + 54;
+    const gridX = x + mapWidth * map.gridInset.left / 100;
+    const gridY = y + mapHeight * map.gridInset.top / 100;
+    const gridWidth = mapWidth * (100 - map.gridInset.left - map.gridInset.right) / 100;
+    const gridHeight = mapHeight * (100 - map.gridInset.top - map.gridInset.bottom) / 100;
+    const cellWidth = gridWidth / map.columns;
+    const cellHeight = gridHeight / map.rows;
+
+    context.fillStyle = "rgba(53, 43, 34, .82)";
+    context.fillRect(gridX, Math.max(y + 4, gridY - 30), 120, 30);
+    context.fillStyle = "#fff1d1";
+    context.font = "700 16px Arial";
+    context.fillText(`PLAYER ${player + 1}`, gridX + 12, Math.max(y + 24, gridY - 9));
+
     for (let slot = 0; slot < map.columns * map.rows; slot += 1) {
       const column = slot % map.columns;
       const row = Math.floor(slot / map.columns);
-      const cellX = gridX + column * (cell + gap);
-      const cellY = gridY + row * (cell + gap);
-      context.fillStyle = "rgba(241, 223, 189, .82)";
-      context.fillRect(cellX, cellY, cell, cell);
-      context.strokeStyle = "rgba(53, 43, 34, .78)";
-      context.lineWidth = 3;
-      context.strokeRect(cellX, cellY, cell, cell);
+      const cellX = gridX + column * cellWidth;
+      const cellY = gridY + row * cellHeight;
+      context.strokeStyle = "rgba(53, 43, 34, .5)";
+      context.lineWidth = 2;
+      context.setLineDash([7, 6]);
+      context.strokeRect(cellX, cellY, cellWidth, cellHeight);
+      context.setLineDash([]);
       const id = board.slots[player][slot];
       const icon = id ? iconCache.get(id) : undefined;
-      if (icon) context.drawImage(icon, cellX + 7, cellY + 7, cell - 14, cell - 14);
+      if (icon) {
+        const iconSize = Math.min(cellWidth, cellHeight) * .86;
+        context.drawImage(icon, cellX + (cellWidth - iconSize) / 2, cellY + (cellHeight - iconSize) / 2, iconSize, iconSize);
+      }
     }
   }
 

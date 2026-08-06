@@ -144,10 +144,17 @@ export function BoardBuilder() {
     ? { width: `${Math.round(boardCanvasSize.width * boardScale)}px`, height: `${Math.round(boardCanvasSize.height * boardScale)}px` }
     : undefined;
   const boardCanvasStyle: CSSProperties = {
-    backgroundImage: `linear-gradient(rgba(53,43,34,.28), rgba(53,43,34,.46)), url(${activeMap.image})`,
     width: boardCanvasSize.width ? `${boardCanvasSize.width}px` : undefined,
     transform: `scale(${boardScale})`,
   };
+  const activeBoardStyle = {
+    "--board-aspect": activeMap.aspectRatio,
+    "--grid-top": `${activeMap.gridInset.top}%`,
+    "--grid-right": `${activeMap.gridInset.right}%`,
+    "--grid-bottom": `${activeMap.gridInset.bottom}%`,
+    "--grid-left": `${activeMap.gridInset.left}%`,
+    "--board-rows": activeMap.rows,
+  } as CSSProperties;
 
   const placeGuardian = (player: number, slot: number, guardianId: string) => {
     updateBoard((draft) => { draft.slots[player][slot] = guardianId; });
@@ -253,7 +260,8 @@ export function BoardBuilder() {
           <div className="board-zoom-viewport" style={boardViewportStyle}>
             <div className={`interactive-boards players-${board.players}`} ref={boardCanvasRef} style={boardCanvasStyle}>
               {board.slots.slice(0, board.players).map((slots, player) => (
-                <div className="interactive-board" key={player}>
+                <div className="interactive-board" key={player} style={activeBoardStyle}>
+                  <img className="interactive-board-map" src={activeMap.image} alt="" draggable={false} />
                   <span className="interactive-player-label">Player {player + 1}</span>
                   <div className="interactive-grid">{slots.map((guardianId, slot) => {
                     const guardian = guardianId ? BOARD_GUARDIANS.find((item) => item.id === guardianId) : undefined;

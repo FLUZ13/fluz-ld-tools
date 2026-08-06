@@ -28,7 +28,7 @@ describe("board model", () => {
     expect(isBoardState(board)).toBe(false);
   });
 
-  it("uses the requested Guild Battle and Extreme grid sizes", () => {
+  it("uses the requested Guild Raid and Extreme Mode grid sizes", () => {
     expect(slotsForMap("guild")).toBe(24);
     expect(slotsForMap("extreme")).toBe(30);
 

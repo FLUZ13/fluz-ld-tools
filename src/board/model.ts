@@ -36,17 +36,19 @@ export interface BoardMap {
   image: string;
   columns: number;
   rows: number;
+  aspectRatio: number;
+  gridInset: { top: number; right: number; bottom: number; left: number };
 }
 
 export const BOARD_MAPS: BoardMap[] = [
-  { id: "normal", name: "Normal", image: "/assets/board/maps/normal.png", columns: 6, rows: 3 },
-  { id: "hard-red", name: "Hard", image: "/assets/board/maps/hard.png", columns: 6, rows: 3 },
-  { id: "hell", name: "Hell", image: "/assets/board/maps/hell.png", columns: 6, rows: 3 },
-  { id: "god", name: "God", image: "/assets/board/maps/god.png", columns: 6, rows: 3 },
-  { id: "primeval", name: "Primeval", image: "/assets/board/maps/primeval.png", columns: 6, rows: 3 },
-  { id: "invasion", name: "Invasion", image: "/assets/board/maps/invasion.png", columns: 6, rows: 3 },
-  { id: "guild", name: "Guild Battle", image: "/assets/board/maps/guild.png", columns: 6, rows: 4 },
-  { id: "extreme", name: "Extreme", image: "/assets/board/maps/extreme.png", columns: 6, rows: 5 },
+  { id: "normal", name: "Normal", image: "/assets/board/maps/normal.png", columns: 6, rows: 3, aspectRatio: 824 / 401, gridInset: { top: 10, right: 7, bottom: 18, left: 7 } },
+  { id: "hard-red", name: "Hard", image: "/assets/board/maps/hard.png", columns: 6, rows: 3, aspectRatio: 824 / 401, gridInset: { top: 10, right: 7, bottom: 18, left: 7 } },
+  { id: "hell", name: "Hell", image: "/assets/board/maps/hell.png", columns: 6, rows: 3, aspectRatio: 824 / 401, gridInset: { top: 10, right: 7, bottom: 18, left: 7 } },
+  { id: "god", name: "God", image: "/assets/board/maps/god.png", columns: 6, rows: 3, aspectRatio: 842 / 418, gridInset: { top: 11, right: 8, bottom: 18, left: 8 } },
+  { id: "primeval", name: "Primeval", image: "/assets/board/maps/primeval.png", columns: 6, rows: 3, aspectRatio: 812 / 403, gridInset: { top: 10, right: 8, bottom: 19, left: 8 } },
+  { id: "invasion", name: "Invasion", image: "/assets/board/maps/invasion.png", columns: 6, rows: 3, aspectRatio: 794 / 373, gridInset: { top: 12, right: 8, bottom: 19, left: 8 } },
+  { id: "guild", name: "Guild Raid", image: "/assets/board/maps/guild.png", columns: 6, rows: 4, aspectRatio: 780 / 427, gridInset: { top: 8, right: 7, bottom: 9, left: 7 } },
+  { id: "extreme", name: "Extreme Mode", image: "/assets/board/maps/extreme.png", columns: 6, rows: 5, aspectRatio: 800 / 600, gridInset: { top: 7, right: 7, bottom: 8, left: 7 } },
 ];
 
 const baseGuardians: Array<[string, string, GuardianRarity, string?]> = [

@@ -115,6 +115,14 @@ export async function logoutModerator() {
   return response.json() as Promise<ModeratorSession>;
 }
 
+export async function deletePublishedBoard(boardId: string) {
+  const response = await fetch(`/api/moderator/boards/${encodeURIComponent(boardId)}`, {
+    method: "DELETE",
+    credentials: "same-origin",
+  });
+  if (!response.ok) throw await apiError(response, "Could not delete community board.");
+}
+
 export async function deletePublishedBoardComment(boardId: string, commentId: string) {
   const response = await fetch(`/api/moderator/boards/${encodeURIComponent(boardId)}/comments/${encodeURIComponent(commentId)}`, {
     method: "DELETE",

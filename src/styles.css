@@ -481,6 +481,10 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .discover-actions a { text-decoration: none; }
 .discover-actions .report-button { color: #8f4d47; }
 .discover-actions .report-button:hover { color: #fff; background: #a54b43; border-color: #82352f; }
+.discover-actions .moderator-board-delete { color: #9f382e; border-color: #bd5348; background: #fff5e4; }
+.discover-actions .moderator-board-delete:hover:not(:disabled) { color: #fff; background: #a54b43; border-color: #82352f; }
+.discover-actions .moderator-board-delete:disabled { opacity: .55; cursor: wait; }
+.moderator-action-error { margin: 0 clamp(18px, 4vw, 60px) 10px; color: #9a4237; font-size: 12px; }
 .discover-comments { border-top: 1px solid #b89d7e; background: #f2e5ce; }
 .discover-comments-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 31px; padding: 6px 10px; color: #5d4738; }
 .discover-comments-heading strong { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; }

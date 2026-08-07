@@ -37,6 +37,7 @@ const boardCommentPattern = /^\/api\/boards\/([0-9a-f-]{36})\/comments$/i;
 const moderatorSessionPattern = /^\/api\/moderator\/session$/;
 const moderatorLoginPattern = /^\/api\/moderator\/login$/;
 const moderatorLogoutPattern = /^\/api\/moderator\/logout$/;
+const moderatorBoardPattern = /^\/api\/moderator\/boards\/([0-9a-f-]{36})$/i;
 const moderatorCommentPattern = /^\/api\/moderator\/boards\/([0-9a-f-]{36})\/comments\/([0-9a-f-]{36})$/i;
 const moderatorLoginSchema = z.object({ username: z.string().min(1).max(128), password: z.string().min(1).max(512) });
 const moderatorSessionLifetimeSeconds = 60 * 60 * 12;
@@ -595,6 +596,26 @@ async function handleModeratorLogout(request: Request) {
   );
 }
 
+async function handleModeratorBoard(request: Request, env: ModeratorEnv, boardId: string, ctx: ExecutionContext) {
+  if (request.method !== "DELETE") return json({ error: "Method not allowed" }, 405);
+  if (!sameOrigin(request)) return json({ error: "Invalid request origin" }, 403);
+  if (!(await isModerator(request, env))) return json({ error: "Moderator authentication required" }, 401);
+
+  const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
+  const rate = await env.WRITE_RATE_LIMITER.limit({ key: `moderator-board-delete:${clientIp}` });
+  if (!rate.success) return json({ error: "Too many moderation requests. Try again shortly." }, 429);
+
+  const results = await env.DB.batch([
+    env.DB.prepare("DELETE FROM community_board_comments WHERE board_id = ?1").bind(boardId),
+    env.DB.prepare("DELETE FROM community_board_reports WHERE board_id = ?1").bind(boardId),
+    env.DB.prepare("DELETE FROM community_boards WHERE board_id = ?1").bind(boardId),
+  ]);
+  if ((results[2].meta.changes ?? 0) !== 1) return json({ error: "Board not found" }, 404);
+
+  await invalidateBoardListCache(request, ctx);
+  return json({ deleted: true });
+}
+
 async function handleModeratorComment(request: Request, env: ModeratorEnv, boardId: string, commentId: string, ctx: ExecutionContext) {
   if (request.method !== "DELETE") return json({ error: "Method not allowed" }, 405);
   if (!sameOrigin(request)) return json({ error: "Invalid request origin" }, 403);
@@ -638,6 +659,15 @@ export default {
       }
     }
     const moderatorEnv = env as ModeratorEnv;
+    const moderatorBoardMatch = moderatorBoardPattern.exec(url.pathname);
+    if (moderatorBoardMatch) {
+      const requestId = crypto.randomUUID();
+      try { return await handleModeratorBoard(request, moderatorEnv, moderatorBoardMatch[1].toLowerCase(), ctx); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "moderator_board_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return json({ error: "Internal error" }, 500, "no-store", requestId);
+      }
+    }
     const moderatorCommentMatch = moderatorCommentPattern.exec(url.pathname);
     if (moderatorCommentMatch) {
       const requestId = crypto.randomUUID();

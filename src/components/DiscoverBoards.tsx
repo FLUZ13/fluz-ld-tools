@@ -1,6 +1,6 @@
 import { Check, Clock3, Copy, ExternalLink, Flag, LoaderCircle, LogIn, LogOut, MessageCircle, RefreshCw, Search, Send, ShieldCheck, Trash2, Wrench, X } from "lucide-react";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
-import { BoardApiError, deletePublishedBoardComment, fetchModeratorSession, fetchPublishedBoardComments, fetchPublishedBoards, loginModerator, logoutModerator, postPublishedBoardComment, reportPublishedBoard, type PublishedBoardComment } from "../board/api";
+import { BoardApiError, deletePublishedBoard, deletePublishedBoardComment, fetchModeratorSession, fetchPublishedBoardComments, fetchPublishedBoards, loginModerator, logoutModerator, postPublishedBoardComment, reportPublishedBoard, type PublishedBoardComment } from "../board/api";
 import { encodeSharedBoard } from "../board/export";
 import { BOARD_MAPS, getBoardMap, normalizeBoardMapId, type BoardState, type PublishedBoard } from "../board/model";
 import { BoardPreview } from "./BoardPreview";
@@ -104,6 +104,8 @@ export function DiscoverBoards() {
   const [moderatorPassword, setModeratorPassword] = useState("");
   const [moderatorBusy, setModeratorBusy] = useState(false);
   const [moderatorError, setModeratorError] = useState("");
+  const [deletingBoardId, setDeletingBoardId] = useState("");
+  const [moderatorActionError, setModeratorActionError] = useState("");
 
   const filters = { map: map === "all" ? undefined : map, players: players === "all" ? undefined : players as "1" | "2", query };
 
@@ -186,6 +188,26 @@ export function DiscoverBoards() {
     catch (reportError) { setError(reportError instanceof Error ? reportError.message : "Could not report this board."); }
   };
 
+  const removeBoard = async (board: PublishedBoard) => {
+    if (!isModerator || deletingBoardId || !window.confirm(`Delete "${board.title}" from Community boards? This permanently removes the board, comments, and reports.`)) return;
+    setDeletingBoardId(board.boardId);
+    setModeratorActionError("");
+    try {
+      await deletePublishedBoard(board.boardId);
+      setBoards((current) => current.filter((candidate) => candidate.boardId !== board.boardId));
+      setHiddenIds((current) => {
+        const next = new Set(current);
+        next.delete(board.boardId);
+        return next;
+      });
+      setCommentsBoard((current) => current?.boardId === board.boardId ? null : current);
+    } catch (deleteError) {
+      setModeratorActionError(deleteError instanceof Error ? deleteError.message : "Could not delete community board.");
+    } finally {
+      setDeletingBoardId("");
+    }
+  };
+
   const increaseCommentCount = (boardId: string) => {
     setBoards((current) => current.map((board) => board.boardId === boardId ? { ...board, commentCount: board.commentCount + 1 } : board));
   };
@@ -247,17 +269,18 @@ export function DiscoverBoards() {
       {loading && <div className="discover-status" role="status">Loading recent boards...</div>}
       {!loading && error && <div className="discover-status discover-error" role="alert"><p>{error}</p><button className="secondary-button" onClick={() => { void refresh(); }}><RefreshCw />Retry</button></div>}
       {!loading && !error && visibleBoards.length === 0 && <div className="discover-status">No boards match these filters yet.</div>}
+      {moderatorActionError && <p className="moderator-action-error" role="alert">{moderatorActionError}</p>}
       <section className="discover-grid">{visibleBoards.map((board) => (
         <article className="discover-card" key={board.boardId}>
           <BoardPreview board={board} compact />
-          <div className="discover-card-copy"><div><h2>{board.title}</h2><span><Clock3 />{new Date(board.updatedAt).toLocaleDateString()} - {getBoardMap(board.map).name} - {board.players}P</span></div><div className="discover-actions"><button className="icon-button" onClick={() => { void copyBoardLink(board); }} title="Copy board link" aria-label={copiedId === board.boardId ? "Board link copied" : "Copy board link"}>{copiedId === board.boardId ? <Check /> : <Copy />}</button>{board.players === 2 && <button className="icon-button" onClick={() => setCommentsBoard(board)} title="Comments" aria-label={`Comments (${board.commentCount})`}><MessageCircle /></button>}<a className="icon-button" href={boardUrl(board)} title="Open in board builder" aria-label="Open in board builder"><ExternalLink /></a><button className="icon-button report-button" onClick={() => { void reportBoard(board); }} title="Hide and report board" aria-label="Hide and report board"><Flag /></button></div></div>
+          <div className="discover-card-copy"><div><h2>{board.title}</h2><span><Clock3 />{new Date(board.updatedAt).toLocaleDateString()} - {getBoardMap(board.map).name} - {board.players}P</span></div><div className="discover-actions"><button className="icon-button" onClick={() => { void copyBoardLink(board); }} title="Copy board link" aria-label={copiedId === board.boardId ? "Board link copied" : "Copy board link"}>{copiedId === board.boardId ? <Check /> : <Copy />}</button>{board.players === 2 && <button className="icon-button" onClick={() => setCommentsBoard(board)} title="Comments" aria-label={`Comments (${board.commentCount})`}><MessageCircle /></button>}<a className="icon-button" href={boardUrl(board)} title="Open in board builder" aria-label="Open in board builder"><ExternalLink /></a><button className="icon-button report-button" onClick={() => { void reportBoard(board); }} title="Hide and report board" aria-label="Hide and report board"><Flag /></button>{isModerator && <button className="icon-button moderator-board-delete" type="button" disabled={deletingBoardId === board.boardId} onClick={() => { void removeBoard(board); }} title="Delete community board" aria-label={`Delete ${board.title} from community boards`}>{deletingBoardId === board.boardId ? <LoaderCircle className="moderator-spin" /> : <Trash2 />}</button>}</div></div>
           {board.players === 1 && <BoardComments board={board} onCommentAdded={increaseCommentCount} onCommentDeleted={decreaseCommentCount} isModerator={isModerator} />}
         </article>
       ))}</section>
       {cursor && !error && <button className="secondary-button discover-more" disabled={loadingMore} onClick={() => { void loadMore(); }}>{loadingMore ? "Loading..." : "Load more"}</button>}
       {activeCommentsBoard && <div className="comments-dialog-backdrop" role="presentation" onMouseDown={() => setCommentsBoard(null)}><section className="comments-dialog" role="dialog" aria-modal="true" aria-labelledby="board-comments-title" onMouseDown={(event) => event.stopPropagation()}><header><div><h2 id="board-comments-title">Comments</h2><p>{activeCommentsBoard.title}</p></div><button className="icon-button" onClick={() => setCommentsBoard(null)} aria-label="Close comments"><X /></button></header><BoardComments board={activeCommentsBoard} onCommentAdded={increaseCommentCount} onCommentDeleted={decreaseCommentCount} isModerator={isModerator} /></section></div>}
       <button className={`moderator-entry icon-button${isModerator ? " is-active" : ""}`} type="button" onClick={() => { setModeratorPanelOpen(true); setModeratorError(""); }} title={isModerator ? "Moderator tools" : "Moderator sign in"} aria-label={isModerator ? "Open moderator tools" : "Moderator sign in"}><Wrench /></button>
-      {moderatorPanelOpen && <div className="comments-dialog-backdrop moderator-dialog-backdrop" role="presentation" onMouseDown={closeModeratorPanel}><section className="moderator-dialog" role="dialog" aria-modal="true" aria-labelledby="moderator-title" onMouseDown={(event) => event.stopPropagation()}><header><div><h2 id="moderator-title">Moderator</h2><p>{isModerator ? "Comment moderation is enabled." : "Sign in to manage community comments."}</p></div><button className="icon-button" type="button" onClick={closeModeratorPanel} aria-label="Close moderator tools"><X /></button></header>{isModerator ? <div className="moderator-authenticated"><span><ShieldCheck />Moderator mode is enabled</span><p>Delete controls appear beside each community comment.</p><button className="secondary-button" type="button" disabled={moderatorBusy} onClick={() => { void signOutModerator(); }}><LogOut />Sign out</button></div> : <form className="moderator-form" onSubmit={submitModeratorLogin}><label>Username<input value={moderatorUsername} onChange={(event) => setModeratorUsername(event.target.value)} autoComplete="username" maxLength={128} required /></label><label>Password<input type="password" value={moderatorPassword} onChange={(event) => setModeratorPassword(event.target.value)} autoComplete="current-password" maxLength={512} required /></label>{moderatorError && <p className="form-error" role="alert">{moderatorError}</p>}<button className="primary-button" type="submit" disabled={moderatorBusy || !moderatorUsername || !moderatorPassword}>{moderatorBusy ? <LoaderCircle className="moderator-spin" /> : <LogIn />}Sign in</button></form>}</section></div>}
+      {moderatorPanelOpen && <div className="comments-dialog-backdrop moderator-dialog-backdrop" role="presentation" onMouseDown={closeModeratorPanel}><section className="moderator-dialog" role="dialog" aria-modal="true" aria-labelledby="moderator-title" onMouseDown={(event) => event.stopPropagation()}><header><div><h2 id="moderator-title">Moderator</h2><p>{isModerator ? "Board and comment moderation is enabled." : "Sign in to manage community boards and comments."}</p></div><button className="icon-button" type="button" onClick={closeModeratorPanel} aria-label="Close moderator tools"><X /></button></header>{isModerator ? <div className="moderator-authenticated"><span><ShieldCheck />Moderator mode is enabled</span><p>Delete controls appear on community boards and comments.</p><button className="secondary-button" type="button" disabled={moderatorBusy} onClick={() => { void signOutModerator(); }}><LogOut />Sign out</button></div> : <form className="moderator-form" onSubmit={submitModeratorLogin}><label>Username<input value={moderatorUsername} onChange={(event) => setModeratorUsername(event.target.value)} autoComplete="username" maxLength={128} required /></label><label>Password<input type="password" value={moderatorPassword} onChange={(event) => setModeratorPassword(event.target.value)} autoComplete="current-password" maxLength={512} required /></label>{moderatorError && <p className="form-error" role="alert">{moderatorError}</p>}<button className="primary-button" type="submit" disabled={moderatorBusy || !moderatorUsername || !moderatorPassword}>{moderatorBusy ? <LoaderCircle className="moderator-spin" /> : <LogIn />}Sign in</button></form>}</section></div>}
     </main>
   );
 }

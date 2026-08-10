@@ -1265,7 +1265,7 @@ export default {
         return json({ error: "Visitor count unavailable" }, 503, "no-store", requestId);
       }
     }
-    if (url.pathname === "/api/page-views") {
+    if (url.pathname === "/api/views" || url.pathname === "/api/page-views") {
       const requestId = crypto.randomUUID();
       try { return await handlePageViewTotal(request, env); }
       catch (error) {

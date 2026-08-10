@@ -94,7 +94,7 @@ function PageViewCount() {
 
     const loadViews = async () => {
       try {
-        const response = await fetch("/api/page-views", { cache: "no-store" });
+        const response = await fetch("/api/views", { cache: "no-store" });
         if (!response.ok) return;
         const payload: unknown = await response.json();
         if (!payload || typeof payload !== "object" || !("total" in payload) || !("today" in payload) || typeof payload.total !== "number" || typeof payload.today !== "number") return;

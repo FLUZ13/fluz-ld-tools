@@ -1,6 +1,6 @@
 import solver, { type SolverModel } from "javascript-lp-solver";
 import { immortalPriorityWeight } from "../data/immortal-priority";
-import { DATA, bisPairFor, ratingsFor, reconcileLockedAssignments, TIERS, type Assignment, type AssignmentSlot, type BuilderState, type Recommendation, type RuneTier } from "../model";
+import { DATA, bisPairFor, ratingsFor, reconcileLockedAssignments, specialRuneFor, TIERS, type Assignment, type AssignmentSlot, type BuilderState, type Recommendation, type RuneTier } from "../model";
 
 interface VariableMeta {
   runeId: string;
@@ -96,6 +96,7 @@ export function optimizeAssignments(state: BuilderState): Recommendation[] {
     constraints[`slots:${immortal.id}`] = { max: 2 - (occupiedSlots.get(immortal.id)?.size ?? 0) };
     for (const [runeIndex, rune] of DATA.runes.entries()) {
       if (lockedRuneTypes.has(`${immortal.id}:${rune.id}`)) continue;
+      if (!state.experimentalRunesEnabled && specialRuneFor(state.metaVersion, immortal.id, state.mode)?.runeId === rune.id) continue;
       constraints[`same:${immortal.id}:${rune.id}`] = { max: 1 };
       const rating = ratings[rune.id]?.[immortal.id];
       const score = rating?.[state.mode];

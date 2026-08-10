@@ -7,6 +7,7 @@ describe("local backup files", () => {
     const state = createDefaultState();
     state.metaVersion = "1.0";
     state.metaVersionHasBeenSelected = true;
+    state.experimentalRunesEnabled = true;
     state.inventory.strength = { 7: 2 };
     state.mode = "guild";
     state.selectedImmortalIds = ["ghost-ninja"];
@@ -18,6 +19,7 @@ describe("local backup files", () => {
     expect(restored.inventory.strength?.[7]).toBe(2);
     expect(restored.mode).toBe("guild");
     expect(restored.metaVersion).toBe("1.0");
+    expect(restored.experimentalRunesEnabled).toBe(true);
     expect(restored.selectedImmortalIds).toEqual(["ghost-ninja"]);
     expect(restored.favoriteImmortalIds).toEqual(["top-vayne"]);
     expect(restored.immortalPriorityOverrides).toEqual({ guild: { "ghost-ninja": "S", "top-vayne": "C" } });

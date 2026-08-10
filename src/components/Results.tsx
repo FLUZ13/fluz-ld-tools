@@ -1,5 +1,5 @@
 import { Lock, LockOpen } from "lucide-react";
-import { DATA, LATEST_META_VERSION, conditionalPairsFor, ratingsFor, reservedRuneCount, TIERS, TIER_NAMES, type Assignment, type BuilderState, type Recommendation, type RuneDefinition, type RuneTier } from "../model";
+import { DATA, LATEST_META_VERSION, conditionalPairsFor, ratingsFor, reservedRuneCount, specialRuneFor, TIERS, TIER_NAMES, type Assignment, type BuilderState, type Recommendation, type RuneDefinition, type RuneTier } from "../model";
 
 interface ResultsProps {
   state: BuilderState;
@@ -21,6 +21,7 @@ function alternativeRunes(state: BuilderState, immortalId: string, equippedRuneI
   const ratings = ratingsFor(state.metaVersion);
   return DATA.runes
     .filter((rune) => !equippedRuneIds.has(rune.id))
+    .filter((rune) => state.experimentalRunesEnabled || specialRuneFor(state.metaVersion, immortalId, state.mode)?.runeId !== rune.id)
     .flatMap((rune) => {
       const tier = [...rune.availableTiers]
         .filter((candidate): candidate is RuneTier => TIERS.includes(candidate) && (state.inventory[rune.id]?.[candidate] ?? 0) - reservedRuneCount(state, rune.id, candidate) > 0)
@@ -97,6 +98,10 @@ export function Results({ state, recommendations, mutate }: ResultsProps) {
     <section className="work-section results-section" aria-labelledby="results-title">
       <div className="section-heading">
         <div><span className="step-number">3</span><h2 id="results-title">Best setup</h2><span className="section-count">{assigned.length} equipped</span></div>
+        <label className="checkbox-label experimental-runes-toggle" title="Include special X/6 runes in automatic setups and alternatives">
+          <span>Experimental Runes</span>
+          <input type="checkbox" checked={state.experimentalRunesEnabled} onChange={(event) => mutate((draft) => { draft.experimentalRunesEnabled = event.target.checked; })} />
+        </label>
       </div>
       {recommendations.length === 0 ? (
         <div className="empty-state"><img src="/assets/ui/rune-smith.png" alt="" /><strong>No assignments yet</strong><span>Add owned runes and keep at least one Immortal selected.</span></div>

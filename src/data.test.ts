@@ -275,8 +275,8 @@ describe("game data snapshot", () => {
   });
 
   it("keeps the public v1.5 review download synchronized", () => {
-    const download = readFileSync("public/exports/ld-runes-meta-v1.4-to-v1.5-review.md", "utf8");
-    expect(download).toBe(buildMetaReviewMarkdown());
+    const download = readFileSync("public/exports/ld-runes-meta-v1.4-to-v1.5-review.md", "utf8").replace(/\r\n/g, "\n");
+    expect(download).toBe(buildMetaReviewMarkdown().replace(/\r\n/g, "\n"));
   });
 
   it("keeps the prior ratings in v1.0 and applies the reviewed v1.1 changes", () => {
@@ -313,6 +313,7 @@ describe("game data snapshot", () => {
     expect(ratingsFor("1.4").smite["dr-pulse"].pve).toBe(5);
     expect(META_VERSIONS).toEqual(["1.0", "2.0.9"]);
     expect(createDefaultState().metaVersion).toBe("2.0.9");
+    expect(createDefaultState().experimentalRunesEnabled).toBe(false);
   });
 
   it("marks the known Limit Break roster and defaults it to level 15", () => {

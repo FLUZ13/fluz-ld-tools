@@ -98,6 +98,21 @@ describe("optimizer", () => {
     expect(assignments).toContainEqual(expect.objectContaining({ runeId: automaticRune.id, slot: 1, locked: false }));
   });
 
+  it("excludes X/6 runes by default and includes them when enabled", () => {
+    const state = createDefaultState();
+    state.selectedImmortalIds = ["awakened-hailey"];
+    owned(state.inventory, "onslaught", 5);
+
+    expect(optimizeAssignments(state)[0].assignments).toEqual([]);
+
+    state.experimentalRunesEnabled = true;
+    expect(optimizeAssignments(state)[0].assignments).toContainEqual(expect.objectContaining({
+      immortalId: "awakened-hailey",
+      runeId: "onslaught",
+      score: 4,
+    }));
+  });
+
   it("re-optimizes a full roster promptly for every displayed Ace Bat Man: Pitcher alternative", () => {
     const state = createDefaultState();
     state.mode = "pve";

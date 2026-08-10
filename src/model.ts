@@ -52,6 +52,7 @@ export interface BuilderState {
   inventory: Record<string, Partial<Record<RuneTier, number>>>;
   selectedImmortalIds: string[];
   lockedAssignments: LockedAssignment[];
+  experimentalRunesEnabled: boolean;
   favoriteImmortalIds: string[];
   immortalPriorityOverrides: ImmortalPriorityOverrides;
   immortalLevels: Record<string, number>;
@@ -172,6 +173,7 @@ export const createDefaultState = (): BuilderState => ({
   inventory: {},
   selectedImmortalIds: DATA.immortals.map((immortal) => immortal.id),
   lockedAssignments: [],
+  experimentalRunesEnabled: false,
   favoriteImmortalIds: [],
   immortalPriorityOverrides: {},
   immortalLevels: Object.fromEntries(DATA.immortals.filter((immortal) => immortal.limitBreak).map((immortal) => [immortal.id, 15])),
@@ -252,17 +254,19 @@ export function migrateBuilderState(state: BuilderState): BuilderState {
     : isSelectableMetaVersion(rawMetaVersion) ? rawMetaVersion : DEFAULT_META_VERSION;
   const metaVersionHasBeenSelected = (state as BuilderState & { metaVersionHasBeenSelected?: unknown }).metaVersionHasBeenSelected === true
     && isSelectableMetaVersion(rawMetaVersion);
+  const experimentalRunesEnabled = (state as BuilderState & { experimentalRunesEnabled?: unknown }).experimentalRunesEnabled === true;
   const rawLevels = state.immortalLevels && typeof state.immortalLevels === "object" ? state.immortalLevels : {};
   const immortalLevels = Object.fromEntries(DATA.immortals.filter((immortal) => immortal.limitBreak).map((immortal) => {
     const level = Number(rawLevels[immortal.id]);
     return [immortal.id, Number.isFinite(level) ? Math.max(15, Math.min(25, Math.floor(level))) : 15];
   }));
-  const versioned = { ...state, favoriteImmortalIds, immortalPriorityOverrides, immortalLevels, metaVersion, metaVersionHasBeenSelected };
+  const versioned = { ...state, experimentalRunesEnabled, favoriteImmortalIds, immortalPriorityOverrides, immortalLevels, metaVersion, metaVersionHasBeenSelected };
   const addedForms = ["ace-bat-man-batter", "knight-lancelot"];
   const selected = new Set(versioned.selectedImmortalIds.filter((id) => immortalIds.has(id)));
   let changed = selected.size !== versioned.selectedImmortalIds.length
     || state.metaVersion !== metaVersion
     || state.metaVersionHasBeenSelected !== metaVersionHasBeenSelected
+    || state.experimentalRunesEnabled !== experimentalRunesEnabled
     || DATA.immortals.some((immortal) => immortal.limitBreak && state.immortalLevels?.[immortal.id] !== immortalLevels[immortal.id]);
 
   for (const [index, addedFormId] of addedForms.entries()) {

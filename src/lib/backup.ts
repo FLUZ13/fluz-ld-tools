@@ -83,6 +83,7 @@ export function parseBackup(text: string): BuilderState {
     inventory,
     selectedImmortalIds,
     lockedAssignments,
+    experimentalRunesEnabled: raw.experimentalRunesEnabled === true,
     favoriteImmortalIds,
     immortalPriorityOverrides,
     immortalLevels,

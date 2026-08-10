@@ -171,6 +171,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .limit-break-control svg { width: 10px; height: 10px; }
 
 .results-section { background: #cdb99c; }
+.results-section > .section-heading h2 { flex: 0 0 auto; white-space: nowrap; }
+.experimental-runes-toggle { min-height: 30px; padding: 0 8px; border: 1px solid rgba(84, 60, 44, .32); border-radius: 4px; background: rgba(238,224,197,.42); cursor: pointer; }
+.experimental-runes-toggle span { white-space: nowrap; }
+.experimental-runes-toggle:hover { background: rgba(238,224,197,.68); }
+.experimental-runes-toggle input { width: 14px; height: 14px; margin: 0; cursor: pointer; }
 .results-list { height: calc(100vh - 164px); overflow: auto; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; align-items: start; gap: 10px; padding: 10px; }
 .result-card { height: max-content; min-height: 190px; margin: 0; overflow: hidden; border: 1px solid #8e7459; border-radius: 6px; background: #eadac1; box-shadow: 0 2px 0 rgba(53,43,34,.16); }
 .result-card > header { min-height: 54px; display: flex; align-items: center; gap: 8px; padding: 5px 8px; color: #fff3dd; background: var(--brown-dark); border-bottom: 3px solid #b77c27; }
@@ -880,6 +885,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
   .app-shell:not(.tool-shell):not(.reference-shell):not(.credits-shell) .mode-control button { min-width: 54px; }
   .status-strip { justify-content: center; font-size: 10px; }
   .section-heading { min-height: 49px; }
+  .experimental-runes-toggle { min-height: 32px; padding: 0 7px; font-size: 10px; }
   .inventory-section { overflow: hidden; }
   .inventory-tools { padding: 7px; }
   .tier-header, .rune-row { width: 100%; min-width: 0; grid-template-columns: clamp(92px, 30vw, 134px) minmax(0, 1fr); gap: 4px; }

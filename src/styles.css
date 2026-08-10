@@ -237,7 +237,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, summary:focus
 .site-footer nav { display: flex; align-items: center; gap: 12px; }
 .footer-credit { color: #efe0c8; white-space: nowrap; }
 .footer-page-views { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; min-width: 86px; margin-left: auto; color: #dff1e6; font-variant-numeric: tabular-nums; font-weight: 900; white-space: nowrap; }
-.footer-page-views i { width: 7px; height: 7px; border-radius: 50%; background: #e5a52d; box-shadow: 0 0 0 2px rgba(229,165,45,.18); }
+.footer-page-views i { width: 7px; height: 7px; border-radius: 50%; background: #48c78e; box-shadow: 0 0 0 2px rgba(72,199,142,.18); }
 .mobile-tabs { display: none; }
 
 .mobile-tooltip-layer { position: fixed; inset: 0; z-index: 1000; }

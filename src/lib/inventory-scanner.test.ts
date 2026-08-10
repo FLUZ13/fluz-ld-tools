@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MAX_SCAN_IMAGE_BYTES, applyScannedInventory, countScannedInventory, deduplicateFiles, scanResultToInventory, validateScanFiles } from "./inventory-scanner";
-import { classifyRuneTier, findFiveColumnGrid, matchTemplateMask, normalizeMask } from "./inventory-scanner-vision";
+import { classifyRuneTier, findFiveColumnGrid, matchTemplateMask, normalizeMask, regularizeGridRows } from "./inventory-scanner-vision";
 
 describe("inventory screenshot scanner helpers", () => {
   it("keeps only Builder-supported tiers when composing a scan", () => {
@@ -59,6 +59,33 @@ describe("inventory screenshot scanner helpers", () => {
       { x: 140, y: 410, width: 31, height: 30, hue: 20 },
     ];
     expect(findFiveColumnGrid([...row, ...decorations])).toEqual([row]);
+  });
+
+  it("regularizes locked rune rows back to full tile boxes", () => {
+    const row = [
+      { x: 87, y: 1155, width: 123, height: 126, hue: 243 },
+      { x: 306, y: 1155, width: 123, height: 126, hue: 246 },
+      { x: 525, y: 1155, width: 123, height: 126, hue: 249 },
+      { x: 747, y: 1159, width: 115, height: 119, hue: 27 },
+      { x: 966, y: 1159, width: 115, height: 119, hue: 27 },
+    ];
+    const [regularized] = regularizeGridRows([row]);
+    expect(regularized).toHaveLength(5);
+    expect(regularized[0].width).toBeGreaterThan(160);
+    expect(regularized[0].height).toBeGreaterThan(165);
+    expect(Math.round(regularized[1].x - regularized[0].x)).toBe(219);
+  });
+
+  it("fills locked-row gaps from the established grid columns without extending right-side partial rows", () => {
+    const full = Array.from({ length: 5 }, (_, index) => ({ x: 64 + index * 219, y: 1132, width: 168, height: 172, hue: 20 }));
+    const offsetFull = full.map((box, index) => ({ ...box, x: box.x + (index === 2 ? -14 : 0), y: 1376 }));
+    const missingLeft = full.slice(2).map((box) => ({ ...box, y: 2112 }));
+    const partialRight = full.slice(0, 3).map((box) => ({ ...box, y: 2356 }));
+    const [, completedOffset, completedLeft, completedPartial] = regularizeGridRows([full, offsetFull, missingLeft, partialRight]);
+    expect(Math.round(completedOffset[2].x)).toBe(502);
+    expect(completedLeft).toHaveLength(5);
+    expect(Math.round(completedLeft[0].x)).toBe(64);
+    expect(completedPartial).toHaveLength(3);
   });
 
   it("classifies visible frame colors and accepts only a clear icon match", () => {

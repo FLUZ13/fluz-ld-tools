@@ -1,6 +1,6 @@
 import { FileDown, FileUp, Minus, Plus, ScanLine, Search, Trash2 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import { DATA, TIERS, TIER_NAMES, type BuilderState, type RuneTier } from "../model";
+import { DATA, reservedRuneCount, TIERS, TIER_NAMES, type BuilderState, type RuneTier } from "../model";
 import { InventoryScanDialog } from "./InventoryScanDialog";
 import { Modal } from "./Modal";
 
@@ -26,7 +26,8 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
 
   const setCount = (runeId: string, tier: RuneTier, value: number) => mutate((draft) => {
     draft.inventory[runeId] ??= {};
-    draft.inventory[runeId][tier] = Math.max(0, Math.min(99, Math.floor(value)));
+    const minimum = reservedRuneCount(draft, runeId, tier);
+    draft.inventory[runeId][tier] = Math.max(minimum, Math.min(99, Math.floor(value)));
   });
 
   const loadFile = async (file: File | undefined) => {
@@ -49,7 +50,7 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
           <button className="text-button scan-action" onClick={() => setScannerOpen(true)} title="Read runes from screenshots"><ScanLine /><span className="scan-label-short">Scan</span><span className="scan-label-long">Scan screenshots</span></button>
           <button className="text-button backup-action" onClick={() => setBackupPrompt(true)} title="Save or load a local backup file"><FileDown /><span>Save / load</span></button>
           <input ref={fileInput} className="visually-hidden" type="file" accept="application/json,.json" onChange={(event) => { void loadFile(event.target.files?.[0]); }} />
-          <button className="icon-button quiet" onClick={() => mutate((draft) => { draft.inventory = {}; })} title="Clear inventory" aria-label="Clear inventory"><Trash2 /></button>
+          <button className="icon-button quiet" onClick={() => mutate((draft) => { draft.inventory = {}; draft.lockedAssignments = []; })} title="Clear inventory" aria-label="Clear inventory"><Trash2 /></button>
         </div>
       </div>
       <div className="inventory-tools">
@@ -74,15 +75,17 @@ export function Inventory({ state, mutate, onExport, onImport }: InventoryProps)
               {TIERS.map((tier) => {
                 const available = rune.availableTiers.includes(tier);
                 const count = state.inventory[rune.id]?.[tier] ?? 0;
+                const reserved = reservedRuneCount(state, rune.id, tier);
                 return (
-                  <div className={`quantity-control tier-${tier} ${!available ? "unavailable" : ""}`} key={tier}>
-                    <button onClick={() => setCount(rune.id, tier, count - 1)} disabled={!available || count === 0} aria-label={`Remove ${TIER_NAMES[tier]} ${rune.name}`}><Minus /></button>
+                  <div className={`quantity-control tier-${tier} ${reserved > 0 ? "has-reservation" : ""} ${!available ? "unavailable" : ""}`} key={tier} title={reserved > 0 ? `${reserved} ${reserved === 1 ? "copy" : "copies"} reserved` : undefined}>
+                    <button onClick={() => setCount(rune.id, tier, count - 1)} disabled={!available || count <= reserved} aria-label={`Remove ${TIER_NAMES[tier]} ${rune.name}`}><Minus /></button>
                     <input
                       aria-label={`${TIER_NAMES[tier]} ${rune.name} count`}
-                      type="number" min="0" max="99" inputMode="numeric" value={available ? count : ""}
+                      type="number" min={reserved} max="99" inputMode="numeric" value={available ? count : ""}
                       disabled={!available}
                       onChange={(event) => setCount(rune.id, tier, Number(event.target.value) || 0)}
                     />
+                    {reserved > 0 && <span className="reserved-count" aria-label={`${reserved} reserved`}>{reserved} locked</span>}
                     <button onClick={() => setCount(rune.id, tier, count + 1)} disabled={!available || count >= 99} aria-label={`Add ${TIER_NAMES[tier]} ${rune.name}`}><Plus /></button>
                   </div>
                 );

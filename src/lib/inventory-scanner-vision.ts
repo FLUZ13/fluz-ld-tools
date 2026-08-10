@@ -1,7 +1,7 @@
 import type { RuneTier } from "../model";
 
 export type ScanBox = { x: number; y: number; width: number; height: number; hue: number; saturation?: number };
-export type TemplateMask = { id: string; mask: Uint8Array };
+export type TemplateMask = { id: string; mask: Uint8Array; normalizedMask?: Uint8Array };
 
 function overlapsMostly(inner: ScanBox, outer: ScanBox) {
   const left = Math.max(inner.x, outer.x);
@@ -90,8 +90,8 @@ export function findFiveColumnGrid(boxes: ScanBox[], minimumColumns = 5) {
         const average = gaps.reduce((sum, gap) => sum + gap, 0) / gaps.length;
         const widths = sequence.map((box) => box.width);
         const heights = sequence.map((box) => box.height);
-        const dimensionsMatch = Math.max(...widths) < Math.min(...widths) * 1.28
-          && Math.max(...heights) < Math.min(...heights) * 1.28;
+        const dimensionsMatch = Math.max(...widths) < Math.min(...widths) * 1.7
+          && Math.max(...heights) < Math.min(...heights) * 1.7;
         if (dimensionsMatch && average > Math.max(...widths) * .75 && Math.max(...gaps) - Math.min(...gaps) < average * .34) {
           found = sequence;
           break;
@@ -103,16 +103,92 @@ export function findFiveColumnGrid(boxes: ScanBox[], minimumColumns = 5) {
   return gridRows;
 }
 
+function median(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+export function regularizeGridRows(rows: ScanBox[][]) {
+  const referenceRow = [...rows].sort((left, right) => right.length - left.length)[0] ?? [];
+  const referenceSorted = [...referenceRow].sort((a, b) => a.x - b.x);
+  const referenceCenters = referenceSorted.map((box) => box.x + box.width / 2);
+  const referenceGaps = referenceCenters.slice(1).map((center, index) => center - referenceCenters[index]).filter((gap) => gap > 0);
+  const referenceStep = referenceGaps.length ? median(referenceGaps) : 0;
+
+  return rows.map((row) => {
+    const sorted = [...row].sort((a, b) => a.x - b.x);
+    if (sorted.length < 2) return sorted;
+    const centers = sorted.map((box) => ({ x: box.x + box.width / 2, y: box.y + box.height / 2 }));
+    const gaps = centers.slice(1).map((center, index) => center.x - centers[index].x).filter((gap) => gap > 0);
+    if (!gaps.length) return sorted;
+    const step = median(gaps);
+    const tileWidth = Math.max(median(sorted.map((box) => box.width)), step * .76);
+    const tileHeight = Math.max(median(sorted.map((box) => box.height)), tileWidth * 1.02);
+    const centerY = median(centers.map((center) => center.y));
+    const regularized = sorted.map((box, index) => ({
+      ...box,
+      x: centers[index].x - tileWidth / 2,
+      y: centerY - tileHeight / 2,
+      width: tileWidth,
+      height: tileHeight,
+    }));
+    if (referenceCenters.length < 3 || !referenceStep) return regularized;
+
+    const assigned = new Map<number, ScanBox>();
+    for (const box of regularized) {
+      const centerX = box.x + box.width / 2;
+      let bestIndex = -1;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      for (let index = 0; index < referenceCenters.length; index++) {
+        const distance = Math.abs(centerX - referenceCenters[index]);
+        if (distance < bestDistance) {
+          bestDistance = distance;
+          bestIndex = index;
+        }
+      }
+      if (bestIndex >= 0 && bestDistance < referenceStep * .45 && !assigned.has(bestIndex)) {
+        assigned.set(bestIndex, { ...box, x: referenceCenters[bestIndex] - tileWidth / 2 });
+      }
+    }
+    if (!assigned.size) return regularized;
+
+    const highestAssignedColumn = Math.max(...assigned.keys());
+    const rowHue = median(sorted.map((box) => box.hue));
+    const rowSaturation = median(sorted.map((box) => box.saturation ?? 1));
+    const completed: ScanBox[] = [];
+    for (let column = 0; column <= highestAssignedColumn; column++) {
+      completed.push(assigned.get(column) ?? {
+        x: referenceCenters[column] - tileWidth / 2,
+        y: centerY - tileHeight / 2,
+        width: tileWidth,
+        height: tileHeight,
+        hue: rowHue,
+        saturation: rowSaturation,
+      });
+    }
+    return completed;
+  });
+}
+
+function jaccardScore(left: Uint8Array, right: Uint8Array) {
+  let intersection = 0;
+  let union = 0;
+  for (let index = 0; index < left.length; index++) {
+    if (left[index] || right[index]) union++;
+    if (left[index] && right[index]) intersection++;
+  }
+  return union ? intersection / union : 0;
+}
+
 export function matchTemplateMask(mask: Uint8Array, templates: TemplateMask[]) {
   let best = { id: "", confidence: 0 };
+  const normalizedMask = templates.some((template) => template.normalizedMask) ? normalizeMask(mask) : undefined;
   for (const template of templates) {
-    let intersection = 0;
-    let union = 0;
-    for (let index = 0; index < mask.length; index++) {
-      if (mask[index] || template.mask[index]) union++;
-      if (mask[index] && template.mask[index]) intersection++;
-    }
-    const confidence = union ? intersection / union : 0;
+    const rawConfidence = jaccardScore(mask, template.mask);
+    const confidence = normalizedMask && template.normalizedMask
+      ? rawConfidence * .78 + jaccardScore(normalizedMask, template.normalizedMask) * .22
+      : rawConfidence;
     if (confidence > best.confidence) best = { id: template.id, confidence };
   }
   return best;

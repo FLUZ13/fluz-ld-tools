@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { countOwnedRunes, createDefaultState, migrateBuilderState, type BuilderState } from "../model";
-import { createAnonymousWorkspace, decryptState, formatSyncCode, parseSyncCode } from "../lib/crypto";
+import { countOwnedRunes, createDefaultState, migrateBuilderState, reconcileLockedAssignments, resetMetaVersionForPageLoad, type BuilderState } from "../model";
+import { createAnonymousWorkspace, decryptState } from "../lib/crypto";
 import { parseBackup, serializeBackup } from "../lib/backup";
 import {
   appendHistory,
-  clearHistory,
   listHistory,
   loadState,
   loadWorkspace,
@@ -13,7 +12,7 @@ import {
   type HistoryEntry,
   type SyncWorkspace,
 } from "../lib/db";
-import { deleteRemoteState, getRemoteState, putRemoteState, SyncConflictError } from "../lib/sync-api";
+import { getRemoteState, putRemoteState, SyncConflictError } from "../lib/sync-api";
 
 type SyncStatus = "local" | "saving" | "saved" | "offline" | "conflict";
 type ConflictState = { device: BuilderState; cloud: BuilderState; serverRevision: number };
@@ -45,20 +44,7 @@ export function useBuilderStore() {
       let nextWorkspace = storedWorkspace ?? createAnonymousWorkspace();
       let nextState = saved?.state ?? createDefaultState();
       let shouldSyncInitialState = Boolean(saved && !storedWorkspace);
-      const hashCode = window.location.hash.startsWith("#sync=") ? window.location.hash : "";
-      if (hashCode) {
-        try {
-          nextWorkspace = parseSyncCode(hashCode);
-          const remote = await getRemoteState(nextWorkspace);
-          nextWorkspace.revision = remote.revision;
-          nextState = await decryptState(remote.encryptedState, nextWorkspace);
-          shouldSyncInitialState = false;
-          window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
-        } catch {
-          shouldSyncInitialState = false;
-          setSyncStatus("offline");
-        }
-      } else if (storedWorkspace) {
+      if (storedWorkspace) {
         try {
           const remote = await getRemoteState(storedWorkspace);
           nextWorkspace = { ...storedWorkspace, revision: remote.revision };
@@ -76,7 +62,7 @@ export function useBuilderStore() {
           setSyncStatus("offline");
         }
       }
-      nextState = migrateBuilderState(nextState);
+      nextState = resetMetaVersionForPageLoad(migrateBuilderState(nextState));
       if (!shouldSyncInitialState) lastSyncedFingerprint.current = stateFingerprint(nextState);
       await Promise.all([saveWorkspace(nextWorkspace), saveState(nextState)]);
       if (!active) return;
@@ -94,9 +80,10 @@ export function useBuilderStore() {
     channel.current.onmessage = (event: MessageEvent<{ origin: string; state: BuilderState }>) => {
       if (event.data.origin === origin) return;
       if (event.data.state.updatedAt <= stateRef.current.updatedAt) return;
+      const incoming = migrateBuilderState(event.data.state);
       suppressNextSync.current = true;
-      stateRef.current = event.data.state;
-      setState(event.data.state);
+      stateRef.current = incoming;
+      setState(incoming);
     };
     return () => channel.current?.close();
   }, [loaded, origin]);
@@ -153,6 +140,7 @@ export function useBuilderStore() {
       future.current = [];
       const next = structuredClone(current);
       recipe(next);
+      next.lockedAssignments = reconcileLockedAssignments(next);
       next.updatedAt = new Date().toISOString();
       stateRef.current = next;
       return next;
@@ -181,7 +169,7 @@ export function useBuilderStore() {
   }, []);
 
   const refreshHistory = useCallback(async () => setHistory(await listHistory()), []);
-  const restoreHistory = useCallback((entry: HistoryEntry) => mutate((draft) => Object.assign(draft, structuredClone(entry.state))), [mutate]);
+  const restoreHistory = useCallback((entry: HistoryEntry) => mutate((draft) => Object.assign(draft, migrateBuilderState(structuredClone(entry.state)))), [mutate]);
 
   const exportBackup = useCallback(() => {
     const blob = new Blob([serializeBackup(stateRef.current)], { type: "application/json" });
@@ -203,32 +191,6 @@ export function useBuilderStore() {
     setState(next);
     setHistoryVersion((version) => version + 1);
   }, []);
-
-  const importSyncCode = useCallback(async (code: string) => {
-    const imported = parseSyncCode(code);
-    const remote = await getRemoteState(imported);
-    imported.revision = remote.revision;
-    const cloud = migrateBuilderState(await decryptState(remote.encryptedState, imported));
-    await Promise.all([saveWorkspace(imported), saveState(cloud), clearHistory()]);
-    suppressNextSync.current = true;
-    lastSyncedFingerprint.current = stateFingerprint(cloud);
-    stateRef.current = cloud;
-    setWorkspace(imported);
-    setState(cloud);
-    setConflict(null);
-    setSyncStatus("saved");
-  }, []);
-
-  const resetWorkspace = useCallback(async () => {
-    if (workspace) {
-      try { await deleteRemoteState(workspace); } catch { /* local reset still succeeds */ }
-    }
-    const next = createAnonymousWorkspace();
-    await saveWorkspace(next);
-    setWorkspace(next);
-    setConflict(null);
-    setSyncStatus("local");
-  }, [workspace]);
 
   const resolveConflict = useCallback(async (choice: "device" | "cloud" | "newest") => {
     if (!conflict || !workspace) return;
@@ -260,12 +222,8 @@ export function useBuilderStore() {
     restoreHistory,
     exportBackup,
     importBackup,
-    workspace,
-    syncCode: workspace ? formatSyncCode(workspace) : "",
     syncStatus,
     conflict,
-    importSyncCode,
-    resetWorkspace,
     resolveConflict,
   };
 }

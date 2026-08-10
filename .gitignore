@@ -17,3 +17,9 @@ test-results/
 *.log
 *.tsbuildinfo
 immortals-contact.png
+outputs/
+tmp/
+tmp-*.png
+*.cpuprofile
+public/exports/*-v2.md
+public/exports/*-v3.md

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "datasetVersion": "2026.08.05-meta.1.4",
-  "sourceUpdatedAt": "2026-07-31",
-  "generatedAt": "2026-08-05T14:49:46.938Z",
+  "datasetVersion": "2026.08.08-meta.1.5",
+  "sourceUpdatedAt": "2026-08-08",
+  "generatedAt": "2026-08-08T14:12:35.248Z",
   "runes": [
     {
       "id": "strength",
@@ -11,10 +11,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Physical Damage +6%",
         "mythic": "ATK +5%, Physical Damage +9%",
-        "immortal": "ATK +6.5%, Physical Damage +12%"
+        "immortal": "ATK +6.5%, Physical Damage +13%"
       },
       "tierLabel": "A",
-      "notes": "All Physical DPS",
+      "notes": "",
       "availableTiers": [
         1,
         2,
@@ -33,10 +33,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Magic Damage +6%",
         "mythic": "ATK +5%, Magic Damage +9%",
-        "immortal": "ATK +6.5%, Magic Damage +12%"
+        "immortal": "ATK +6.5%, Magic Damage +13%"
       },
       "tierLabel": "A",
-      "notes": "All Magic DPS",
+      "notes": "",
       "availableTiers": [
         1,
         2,
@@ -55,7 +55,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, ATK +4%",
         "mythic": "ATK +5%, ATK +6%",
-        "immortal": "ATK +6.5%, ATK +8%"
+        "immortal": "ATK +6.5%, ATK +10%"
       },
       "tierLabel": "B",
       "notes": "",
@@ -77,7 +77,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, ATK SPD +3%",
         "mythic": "ATK +5%, ATK SPD +4%",
-        "immortal": "ATK +6.5%, ATK SPD +6%"
+        "immortal": "ATK +6.5%, ATK SPD +7%"
       },
       "tierLabel": "B-C",
       "notes": "",
@@ -99,10 +99,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, MP Regen +10%",
         "mythic": "ATK +5%, MP Regen +12%",
-        "immortal": "ATK +6.5%, MP Regen +16%"
+        "immortal": "ATK +6.5%, MP Regen +18%"
       },
       "tierLabel": "D",
-      "notes": "This is honestly only viable on kitty because she is reliant on ult cast",
+      "notes": "Great Kitty Mage fallback only: extra MP regeneration can improve her ultimate uptime when Mastery or Imperfect Spell is unavailable.",
       "availableTiers": [
         1,
         2,
@@ -121,7 +121,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Ultimate Cooldown -4%",
         "mythic": "ATK +5%, Ultimate Cooldown -6%",
-        "immortal": "ATK +6.5%, Ultimate Cooldown -8%"
+        "immortal": "ATK +6.5%, Ultimate Cooldown -9%"
       },
       "tierLabel": "F",
       "notes": "",
@@ -143,10 +143,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, CRIT Rate +2%",
         "mythic": "ATK +5%, CRIT Rate +3%",
-        "immortal": "ATK +6.5%, CRIT Rate +4%"
+        "immortal": "ATK +6.5%, CRIT Rate +5%"
       },
       "tierLabel": "S",
-      "notes": "For Magic DPS - Must have Immo Kitty Mage to be good",
+      "notes": "For Magic DPS, this becomes useful only when Great Kitty Mage enables skill CRITs.",
       "availableTiers": [
         1,
         2,
@@ -165,10 +165,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, CRIT DMG +12%",
         "mythic": "ATK +5%, CRIT DMG +15%",
-        "immortal": "ATK +6.5%, CRIT DMG +20%"
+        "immortal": "ATK +6.5%, CRIT DMG +25%"
       },
       "tierLabel": "A",
-      "notes": "For Magic DPS - Must have Immo Kitty Mage to be good",
+      "notes": "For Magic DPS, this becomes useful only when Great Kitty Mage enables skill CRITs.",
       "availableTiers": [
         1,
         2,
@@ -187,7 +187,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Damage to Stunned Enemies +4%",
         "mythic": "ATK +5%, Damage to Stunned Enemies +6%",
-        "immortal": "ATK +6.5%, Damage to Stunned Enemies +8%"
+        "immortal": "ATK +6.5%, Damage to Stunned Enemies +9%"
       },
       "tierLabel": "B",
       "notes": "",
@@ -209,7 +209,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, MOV SPD +12%",
         "mythic": "ATK +5%, MOV SPD +15%",
-        "immortal": "ATK +6.5%, MOV SPD +20%"
+        "immortal": "ATK +6.5%, MOV SPD +21%"
       },
       "tierLabel": "F",
       "notes": "",
@@ -231,7 +231,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Base ATK +12%",
         "mythic": "ATK +5%, Base ATK +15%",
-        "immortal": "ATK +6.5%, Base ATK +20%"
+        "immortal": "ATK +6.5%, Base ATK +21%"
       },
       "tierLabel": "F",
       "notes": "",
@@ -253,7 +253,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Skill Damage +6%",
         "mythic": "ATK +5%, Skill Damage +9%",
-        "immortal": "ATK +6.5%, Skill Damage +12%"
+        "immortal": "ATK +6.5%, Skill Damage +13%"
       },
       "tierLabel": "A",
       "notes": "",
@@ -300,7 +300,7 @@
         "immortal": "ATK +6.5%, Stun Duration +12%"
       },
       "tierLabel": "A",
-      "notes": "Grav only\nF for all other immos",
+      "notes": "Super Graviton only. Stun-duration scaling does not justify this rune on other Immortals.",
       "availableTiers": [
         1,
         2,
@@ -319,7 +319,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Boss Damage +6%",
         "mythic": "ATK +5%, Boss Damage +9%",
-        "immortal": "ATK +6.5%, Boss Damage +12%"
+        "immortal": "ATK +6.5%, Boss Damage +11%"
       },
       "tierLabel": "A-B",
       "notes": "",
@@ -341,7 +341,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, DEF -10",
         "mythic": "ATK +5%, DEF -12",
-        "immortal": "ATK +6.5%, DEF -16"
+        "immortal": "ATK +6.5%, DEF -17"
       },
       "tierLabel": "D",
       "notes": "",
@@ -363,7 +363,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Ultimate Damage +6%",
         "mythic": "ATK +5%, Ultimate Damage +9%",
-        "immortal": "ATK +6.5%, Ultimate Damage +12%"
+        "immortal": "ATK +6.5%, Ultimate Damage +13%"
       },
       "tierLabel": "B",
       "notes": "",
@@ -385,10 +385,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Single-Target Damage +6%",
         "mythic": "ATK +5%, Single-Target Damage +9%",
-        "immortal": "ATK +6.5%, Single-Target Damage +12%"
+        "immortal": "ATK +6.5%, Single-Target Damage +13%"
       },
       "tierLabel": "A-B",
-      "notes": "Vayne only, Ninja may also be good.\n\nPotentially A Tier for All DPS Immos in PVP/Guild Raid\nSingle target damage is linked to the skill/damage type and not to hitting only one unit (fact-checked 20260210)",
+      "notes": "Single-Target Damage follows the attack or skill's damage tag; it does not require only one enemy to be hit.",
       "availableTiers": [
         1,
         2,
@@ -407,7 +407,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Area Damage +4%",
         "mythic": "ATK +5%, Area Damage +6%",
-        "immortal": "ATK +6.5%, Area Damage +8%"
+        "immortal": "ATK +6.5%, Area Damage +9%"
       },
       "tierLabel": "B",
       "notes": "",
@@ -429,10 +429,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Damage +0.6% for each Immortal Type on my field",
         "mythic": "ATK +5%, Damage +0.90% for each Immortal Type on my field",
-        "immortal": "ATK +6.5%, Damage +1.2% for each Immortal Type on my field"
+        "immortal": "ATK +6.5%, Damage +1.3% for each Immortal Type on my field"
       },
       "tierLabel": "A-B",
-      "notes": "Generic lategame use\n\nImportant: This rune will perform less optimally in PVP. Consider switching this rune out before playing these modes!",
+      "notes": "",
       "availableTiers": [
         1,
         2,
@@ -495,7 +495,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Basic ATK: 2% chance to Stun for 0.6s",
         "mythic": "ATK +5%, Basic ATK: 2.5% chance to Stun for 0.8s",
-        "immortal": "ATK +6.5%, Basic ATK: 2.5% chance to Stun for 0.8s"
+        "immortal": "ATK +6.5%, Basic ATK: 2.7% chance to Stun for 0.8s"
       },
       "tierLabel": "F",
       "notes": "",
@@ -539,7 +539,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, After Moving: ATK SPD +9% for 1.6s",
         "mythic": "ATK +5%, After Moving: ATK SPD +12% for 1.6s",
-        "immortal": "ATK +6.5%, After Moving: ATK SPD +12% for 2s"
+        "immortal": "ATK +6.5%, After Moving: ATK SPD +15% for 2s"
       },
       "tierLabel": "F",
       "notes": "",
@@ -561,7 +561,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Skill Hit: 35% chance to deal 4% bonus damage on hit",
         "mythic": "ATK +5%, Skill Hit: 35% chance to deal 6% bonus damage on hit",
-        "immortal": "ATK +5%, Skill Hit: 40% chance to deal 6% bonus damage on hit"
+        "immortal": "ATK +5%, Skill Hit: 40% chance to deal 7% bonus damage on hit"
       },
       "tierLabel": "C",
       "notes": "",
@@ -605,7 +605,7 @@
       "descriptions": {
         "legendary": "ATK +3.5%, 1.6% chance to Execute enemies below 3% HP",
         "mythic": "ATK +5%, 1.6% chance to Execute enemies below 3.5% HP",
-        "immortal": "ATK +6.5%, 2% chance to Execute enemies below 3.5% HP"
+        "immortal": "ATK +6.5%, 2% chance to Execute enemies below 4% HP"
       },
       "tierLabel": "F",
       "notes": "",
@@ -649,10 +649,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, During Wave: ATK +0.4% every 5s",
         "mythic": "ATK +5%, During Wave: ATK +0.5% every 5s",
-        "immortal": "ATK +6.5%, During Wave: ATK +0.6% every 5s"
+        "immortal": "ATK +6.5%, During Wave: ATK +0.7% every 5s"
       },
       "tierLabel": "A-C",
-      "notes": "Can be useful in late boss waves (up to 1:30 / 9% ATK boost)\n\nNote: A tier only for late half of boss waves. \nAs each regular wave is only 20 seconds long, this rune will provide up to 2% ATK during normal mob waves (i.e. max C tier for normal waves)",
+      "notes": "Wave timer matters: at Immortal tier it reaches +12.6% ATK after 90 seconds, but a normal 20-second wave provides only up to +2.8%.",
       "availableTiers": [
         1,
         2,
@@ -674,7 +674,7 @@
         "immortal": "ATK +6.5%, On Immortal Summon, 50% chance to gain a shield that blocks harmful effects"
       },
       "tierLabel": "B",
-      "notes": "S tier for Mama in PVP\nLess recommended for DPS due to no attack boost",
+      "notes": "Grand Mama exception: the shield protects her board-control role in all modes. It provides no direct damage bonus for normal DPS units.",
       "availableTiers": [
         1,
         2,
@@ -696,7 +696,7 @@
         "immortal": "ATK +6.5%, ATK SPD +0.6% for each Immortal Type on my field"
       },
       "tierLabel": "F",
-      "notes": "You get max ATK SPD +4% from 10 types of immos. \n\nGet indy instead.",
+      "notes": "",
       "availableTiers": [
         1,
         2,
@@ -718,7 +718,7 @@
         "immortal": "ATK +6.5%, Magic DMG +0.25% per wave after being summoned"
       },
       "tierLabel": "A",
-      "notes": "Must strategize equipped immortal for early summon\n\nImportant: This rune will perform poorly in PVP or Guild Raid. Switch this rune out before playing these modes!",
+      "notes": "Starts stacking only after its bearer is summoned. Strongest in long PvE runs and loses substantial value when the bearer arrives late.",
       "availableTiers": [
         1,
         2,
@@ -737,10 +737,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Range -30%, DMG +10%",
         "mythic": "ATK +5%, Range -30%, DMG +12%",
-        "immortal": "ATK +6.5%, Range -30%, DMG +16%"
+        "immortal": "ATK +6.5%, Range -30%, DMG +17%"
       },
       "tierLabel": "S",
-      "notes": "Gameplay will feel weird for some characters... you should test and see if its viable for your playstyle\nBy current meta this is placed on Vayne (for max boss damage)",
+      "notes": "Use only after confirming the 30% range reduction still reaches the intended target. Best suited to fixed boss positioning such as Top Vayne.",
       "availableTiers": [
         1,
         2,
@@ -781,10 +781,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, Attack disabled for 14 waves, ATK +10%",
         "mythic": "ATK +5%, Attack disabled for 16 waves, ATK +12%",
-        "immortal": "ATK +6.5%, Attack disabled for 18 waves, ATK +16%"
+        "immortal": "ATK +6.5%, Attack disabled for 17 waves, ATK +17%"
       },
       "tierLabel": "B",
-      "notes": "Not reliable, Might be A tier with lucky early game\n\nImportant: This rune will perform poorly in PVP or Guild Raid. Switch this rune out before playing these modes!",
+      "notes": "The bearer cannot attack for 17 waves. Consider only with a very early summon and a late-wave damage plan; normally unsuitable for PvP or Guild Raid.",
       "availableTiers": [
         1,
         2,
@@ -825,10 +825,10 @@
       "descriptions": {
         "legendary": "ATK +3.5%, On Immortal Summon, Physical DMG + 0.08% for every 500 Gold spent (up to 15%)",
         "mythic": "ATK +5%, On Immortal Summon, Physical DMG + 0.12% for every 500 Gold spent (up to 20%)",
-        "immortal": "ATK +6.5%, On Immortal Summon, Physical DMG + 0.16% for every 500 Gold spent (up to 20%)"
+        "immortal": "ATK +6.5%, On Immortal Summon, Physical DMG +0.17% for every 500 Gold spent (up to 20%)"
       },
       "tierLabel": "S-A",
-      "notes": "Must strategize equipped immortal for late summon\n83.3k gold spent (about 580 summon cost) for max\n\nEnglish, French, German, Spanish version descriptions are ambiguous. The real mechanism here is \"DMG +x% for every 500 Gold to be spent after summon\", so it is now recommended for mid-game immortal summons\n\nMax (+15%/+20% DMG) requirements:\nLegendary: (187.5* 500) = 93,750 Gold spent (~Spamming from 200 - 640 cost)\nMythic: (166.6*500) = 83,333 Gold spent (~Spamming from 200 - 610 cost)\nImmortal: (125*500) = 62,500 Gold spent (~Spamming from 200 - 540 cost)\n\nImportant: This rune will perform poorly in PVP or Guild Raid. Switch this rune out before playing these modes!",
+      "notes": "Translation warning: only Gold spent after the bearer is summoned builds the bonus. The Immortal rune needs 59,000 Gold after summon to reach its +20% cap, so it is weak in short modes.",
       "availableTiers": [
         1,
         2,
@@ -847,10 +847,10 @@
       "descriptions": {
         "legendary": "N/A",
         "mythic": "ATK +5%, Range +15%, DMG -9%",
-        "immortal": "ATK +6.5%, Range +20%, DMG -12%"
+        "immortal": "ATK +6.5%, Range +20%, DMG -10%"
       },
       "tierLabel": "C",
-      "notes": "Wider buff ranges are decent, probably B tier on Ato",
+      "notes": "Support-range option: Range increases ally-buff areas, confirmed for Noisy Penguin. Remember that the rune also reduces the bearer's damage.",
       "availableTiers": [
         5,
         6,
@@ -883,10 +883,10 @@
       "descriptions": {
         "legendary": "N/A",
         "mythic": "ATK +5%, Move Disabled, ATK +12%",
-        "immortal": "ATK +6.5%, Move Disabled, ATK +16%"
+        "immortal": "ATK +6.5%, Move Disabled, ATK +17%"
       },
-      "tierLabel": "A-B",
-      "notes": "Maybe useable if strategically placed\nor in Guild Raid",
+      "tierLabel": "C-D",
+      "notes": "Restricting movement creates substantially more risk from dodgeable debuffs than the small ATK boost usually provides. Top Vayne must never use it because moving is part of her ultimate mechanic; Primeval Bomba remains a manual fixed-position exception only when movement is certainly unnecessary.",
       "availableTiers": [
         5,
         6,
@@ -940,7 +940,7 @@
         "immortal": "ATK +6.5%, On Crit Hit, summons lightning that deals AOE damage equal to 600% ATK"
       },
       "tierLabel": "B-C",
-      "notes": "(disputed)",
+      "notes": "",
       "availableTiers": [
         5,
         6,
@@ -958,7 +958,7 @@
         "immortal": "ATK +6.5%, Magic DMG +0.3% for every 10 enemies defeated (up to 30%)"
       },
       "tierLabel": "S",
-      "notes": "Must strategize equipped immortal for early summon\n\n1000 Kills = +20% Damage (MAX)\n750 Kills = +15% Damage (same as Eternal Rune of Magic)\n600 Kills = +12% Damage (same as Immo. Rune of Magic)\n450 Kills = +9% Damage (same as Mythic Rune of Magic)\n\nImportant: This rune will perform poorly in PVP or Guild Raid. Switch this rune out before playing these modes!",
+      "notes": "PvE stacking rune: equip it on an early summon. At Immortal tier it reaches +30% Magic DMG after 1,000 kills; late summons and short PvP or Guild runs lose most of its value.",
       "availableTiers": [
         5,
         6,
@@ -973,10 +973,10 @@
       "descriptions": {
         "legendary": "N/A",
         "mythic": "ATK +5%, Damage Taken -16%, Skill Activation Chance +1.2%",
-        "immortal": "ATK +6.5%, Damage Taken -18%, Skill Activation Chance +1.6%"
+        "immortal": "ATK +6.5%, DMG -16%, Skill Activation Chance +1.6%"
       },
       "tierLabel": "A",
-      "notes": "Support only.\nThis rune actually means\n\"Damage output -16%\" and skill activation +1.2% by other game languages.",
+      "notes": "Translation warning: this reduces the bearer's personal damage output by 16% at Mythic and Immortal tier; it does not reduce incoming damage. Use on support units only.",
       "availableTiers": [
         5,
         6,
@@ -994,7 +994,7 @@
         "immortal": "ATK +6.5%, Ultimate Disabled, Base ATK +50%"
       },
       "tierLabel": "F",
-      "notes": "Note - base atk doesnt effect skill damage etc\n\nPotentially good on Hailey\nResearch note: Hailey can gain damage by disabling her long ultimate at specific attack-speed and mana thresholds; test against your board buffs.",
+      "notes": "",
       "availableTiers": [
         5,
         6,
@@ -1009,7 +1009,7 @@
       "descriptions": {
         "legendary": "N/A",
         "mythic": "ATK +5%, Each time an Immortal Guardian dies, permanently gain ATK SPD +1.2% and ATK+2%",
-        "immortal": "ATK +6.5%, Each time an Immortal Guardian dies, permanently gain ATK SPD +1.6% and ATK+3%"
+        "immortal": "ATK +6.5%, Each time an Immortal Guardian dies, permanently gain ATK SPD +1.7% and ATK +3%"
       },
       "tierLabel": "F",
       "notes": "",
@@ -1030,7 +1030,7 @@
         "immortal": "ATK +6.5%, Physical DMG +0.3% for every 10 enemies defeated (up to 30%)"
       },
       "tierLabel": "S",
-      "notes": "Must strategize equipped immortal for early summon\n\n1000 Kills = +20% Damage (MAX)\n750 Kills = +15% Damage (same as Eternal Rune of Strength)\n600 Kills = +12% Damage (same as Immo. Rune of Strength)\n450 Kills = +9% Damage (same as Mythic Rune of Strength)\n\nImportant: This rune will perform poorly in PVP or Guild Raid. Switch this rune out before playing these modes!",
+      "notes": "PvE stacking rune: equip it on an early summon. At Immortal tier it reaches +30% Physical DMG after 1,000 kills; late summons and short PvP or Guild runs lose most of its value.",
       "availableTiers": [
         5,
         6,
@@ -1048,7 +1048,7 @@
         "immortal": "ATK +6.5%, Upon death, 25% chance to revive once with Skill DMG +80%"
       },
       "tierLabel": "C",
-      "notes": "A tier in PVP due to good utility. \n\nRevived Immo Frog carries over Skill DMG buff for Immo Dian. (Disputed - fact check needed)",
+      "notes": "",
       "availableTiers": [
         5,
         6,
@@ -1063,10 +1063,10 @@
       "descriptions": {
         "legendary": "N/A",
         "mythic": "ATK +5%, Physical DMG +12%, Ultimate DMG -50%",
-        "immortal": "ATK +6.5%, Physical DMG +16%, Ultimate DMG -50%"
+        "immortal": "ATK +6.5%, Physical DMG +17%, Ultimate DMG -50%"
       },
       "tierLabel": "A",
-      "notes": "Bomba, Vayne only (roka maaaybe)\nF for all other immos",
+      "notes": "Primeval Bomba and Top Vayne only. Avoid on ultimate-reliant units because the rune cuts Ultimate DMG by 50%.",
       "availableTiers": [
         5,
         6,
@@ -1081,7 +1081,7 @@
       "descriptions": {
         "legendary": "N/A",
         "mythic": "ATK +5%, Magic DMG +12%, Skill Activation Chance -3%",
-        "immortal": "ATK +6.5%, Magic DMG +16%, Skill Activation Chance -3%"
+        "immortal": "ATK +6.5%, Magic DMG +17%, Skill Activation Chance -3%"
       },
       "tierLabel": "F",
       "notes": "",
@@ -1102,7 +1102,7 @@
         "immortal": "ATK +6.5%, DMG +2% for each corresponding pre-transformation stage Mythic Guardian"
       },
       "tierLabel": "B",
-      "notes": "Ninja (or Tao) only\nF for all other immos",
+      "notes": "Only works with a corresponding pre-transformation Mythic Guardian. Primarily relevant to Ghost Ninja and Azure Dragon Taoist.",
       "availableTiers": [
         5,
         6,
@@ -1176,7 +1176,7 @@
       "id": "i-am-meow",
       "name": "I Am Meow",
       "assetId": "15004",
-      "role": "support",
+      "role": "magic",
       "image": "/assets/immortals/15004.png",
       "boardImage": "/assets/board/guardians/15004.png",
       "provisional": false,
@@ -1209,7 +1209,7 @@
       "role": "support",
       "image": "/assets/immortals/15007.png",
       "boardImage": "/assets/board/guardians/15007.png",
-      "provisional": true,
+      "provisional": false,
       "limitBreak": true
     },
     {
@@ -1260,7 +1260,7 @@
       "image": "/assets/immortals/1400601.png",
       "boardImage": "/assets/board/guardians/1400601.png",
       "provisional": false,
-      "limitBreak": true
+      "limitBreak": false
     },
     {
       "id": "colony-tar",
@@ -1269,7 +1269,7 @@
       "role": "physical",
       "image": "/assets/immortals/1501401.png",
       "boardImage": "/assets/board/guardians/1501401.png",
-      "provisional": true,
+      "provisional": false,
       "limitBreak": true
     },
     {
@@ -1289,7 +1289,7 @@
       "role": "magic",
       "image": "/assets/immortals/15017.png",
       "boardImage": "/assets/board/guardians/15017.png",
-      "provisional": true,
+      "provisional": false,
       "limitBreak": true
     },
     {
@@ -1309,7 +1309,7 @@
       "role": "physical",
       "image": "/assets/immortals/1501901.png",
       "boardImage": "/assets/board/guardians/1501901.png",
-      "provisional": true,
+      "provisional": false,
       "limitBreak": false
     },
     {
@@ -1379,7 +1379,7 @@
       "role": "physical",
       "image": "/assets/immortals/15026.png",
       "boardImage": "/assets/board/guardians/15026.png",
-      "provisional": true,
+      "provisional": false,
       "limitBreak": true
     },
     {
@@ -1389,8 +1389,8 @@
       "role": "magic",
       "image": "/assets/immortals/15003.png",
       "boardImage": "/assets/board/guardians/15003.png",
-      "provisional": true,
-      "limitBreak": false
+      "provisional": false,
+      "limitBreak": true
     }
   ],
   "ratings": {
@@ -12047,39 +12047,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -12245,39 +12245,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 3,
-          "pvp": 3,
-          "guild": 3,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -12443,39 +12443,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -12641,39 +12641,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -12839,39 +12839,39 @@
           "sourceSymbol": "🤔"
         },
         "evergreen-verdee": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -13041,35 +13041,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -13235,39 +13235,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -13433,39 +13433,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -13631,39 +13631,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -13833,35 +13833,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -14031,35 +14031,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -14225,39 +14225,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 3,
-          "pvp": 3,
-          "guild": 3,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -14423,39 +14423,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -14621,39 +14621,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -14819,39 +14819,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -15017,39 +15017,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -15215,39 +15215,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -15413,39 +15413,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -15611,39 +15611,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 3,
-          "pvp": 3,
-          "guild": 3,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -15809,39 +15809,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -16007,39 +16007,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -16205,39 +16205,39 @@
           "sourceSymbol": "🤔"
         },
         "evergreen-verdee": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -16407,35 +16407,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -16601,39 +16601,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -16803,35 +16803,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -16997,39 +16997,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -17195,39 +17195,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -17397,35 +17397,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -17591,39 +17591,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -17789,39 +17789,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -17987,39 +17987,39 @@
           "sourceSymbol": "🤔"
         },
         "evergreen-verdee": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -18189,35 +18189,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -18383,39 +18383,39 @@
           "sourceSymbol": "🤔"
         },
         "evergreen-verdee": {
-          "pve": 2,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 5,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -18581,39 +18581,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -18779,39 +18779,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -18977,39 +18977,39 @@
           "sourceSymbol": "🤔"
         },
         "evergreen-verdee": {
-          "pve": 2,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 2,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 2,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 2,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -19179,35 +19179,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -19373,39 +19373,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -19571,39 +19571,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -19769,39 +19769,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -19967,39 +19967,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -20169,35 +20169,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -20363,39 +20363,39 @@
           "sourceSymbol": "🤔"
         },
         "evergreen-verdee": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 2,
-          "pvp": 2,
-          "guild": 2,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -20561,39 +20561,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -20759,39 +20759,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -20957,39 +20957,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -21159,35 +21159,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -21357,35 +21357,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -21551,39 +21551,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 5,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 5,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -21749,39 +21749,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 5,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 4,
-          "pvp": 5,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 4,
-          "pvp": 5,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 4,
-          "pvp": 5,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 2,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -21947,39 +21947,39 @@
           "sourceSymbol": "❌"
         },
         "evergreen-verdee": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -22149,35 +22149,35 @@
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 1,
-          "pvp": 1,
-          "guild": 1,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": "research"
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
           "pve": null,
           "pvp": null,
           "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,
@@ -22343,39 +22343,39 @@
           "sourceSymbol": "✅"
         },
         "evergreen-verdee": {
-          "pve": 4,
-          "pvp": 4,
-          "guild": 4,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "colony-tar": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "genie-wiz-zap": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "savior-ray": {
-          "pve": 5,
-          "pvp": 5,
-          "guild": 5,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "demon-monopoly": {
-          "pve": 0,
-          "pvp": 0,
-          "guild": 0,
+          "pve": null,
+          "pvp": null,
+          "guild": null,
           "confidence": "provisional",
-          "sourceSymbol": ""
+          "sourceSymbol": "not-released"
         },
         "knight-lancelot": {
           "pve": null,

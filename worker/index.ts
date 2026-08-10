@@ -37,6 +37,10 @@ const boardCommentPattern = /^\/api\/boards\/([0-9a-f-]{36})\/comments$/i;
 const moderatorSessionPattern = /^\/api\/moderator\/session$/;
 const moderatorLoginPattern = /^\/api\/moderator\/login$/;
 const moderatorLogoutPattern = /^\/api\/moderator\/logout$/;
+const moderatorAnalyticsPattern = /^\/api\/moderator\/analytics$/;
+const moderatorDashboardPattern = /^\/api\/moderator\/dashboard$/;
+const moderatorDashboardPagePattern = /^\/moderator\/analytics$/;
+const analyticsEventPattern = /^\/api\/analytics\/event$/;
 const moderatorBoardPattern = /^\/api\/moderator\/boards\/([0-9a-f-]{36})$/i;
 const moderatorCommentPattern = /^\/api\/moderator\/boards\/([0-9a-f-]{36})\/comments\/([0-9a-f-]{36})$/i;
 const moderatorLoginSchema = z.object({ username: z.string().min(1).max(128), password: z.string().min(1).max(512) });
@@ -44,22 +48,497 @@ const moderatorSessionLifetimeSeconds = 60 * 60 * 12;
 const moderatorSessionCookie = "__Host-ld-moderator";
 type ModeratorEnv = Env & { MODERATOR_USERNAME?: string; MODERATOR_PASSWORD?: string; MODERATOR_SESSION_SECRET?: string };
 
+const analyticsPages = ["home", "builder", "runes", "boards", "discover", "credits", "privacy"] as const;
+const analyticsPageSchema = z.enum(analyticsPages);
+const analyticsEventSchema = z.object({
+  event: z.enum(["page_view", "scanner_started", "scanner_applied", "scanner_rejected", "scanner_error"]),
+  page: analyticsPageSchema,
+  visitorHash: z.string().regex(/^[a-f0-9]{64}$/),
+}).strict();
+const analyticsCommunitySchema = z.object({ metric: z.enum(["boards_shared", "comments_posted"]) }).strict();
+const analyticsHealthSchema = z.object({ success: z.boolean(), latencyMs: z.number().int().min(0).max(60_000) }).strict();
+const analyticsIncidentSchema = z.object({
+  source: z.enum(["analytics", "boards", "moderation", "scanner", "sync"]),
+  code: z.enum([
+    "analytics_unavailable",
+    "board_operation_failed",
+    "moderation_operation_failed",
+    "scan_processing_failed",
+    "sync_operation_failed",
+  ]),
+  severity: z.enum(["warning", "error"]),
+}).strict();
+const analyticsRetentionDays = 45;
+const healthRetentionDays = 90;
+const incidentRetentionDays = 180;
+const analyticsMetricKeys = [
+  "unique_visitors",
+  "page_views",
+  ...analyticsPages,
+  "boards_shared",
+  "comments_posted",
+  "scans_started",
+  "scans_applied",
+  "scans_rejected",
+  "scan_errors",
+] as const;
+
+type AnalyticsMetricKey = typeof analyticsMetricKeys[number];
+type AnalyticsDailyRow = Record<AnalyticsMetricKey, number> & { day: string };
+type AnalyticsWindow = "today" | "last7" | "last30" | "allTime";
+type AnalyticsStats = Record<AnalyticsWindow, Record<AnalyticsMetricKey, number>>;
+type AnalyticsTotals = Partial<Record<AnalyticsMetricKey, number>>;
+type AnalyticsSnapshot = { generatedAt: string; rows: AnalyticsDailyRow[]; totals: AnalyticsTotals };
+type HealthCheck = { checkedAt: string; success: boolean; latencyMs: number };
+type HealthIncident = { startedAt: string; lastSeenAt: string; resolvedAt: string | null; failedChecks: number };
+type IncidentRollup = { occurredAt: string; lastSeenAt: string; source: string; code: string; severity: "warning" | "error"; count: number };
+type HealthSnapshot = { lastCheck: HealthCheck | null; checks: HealthCheck[]; outages: HealthIncident[]; incidents: IncidentRollup[] };
+
+const pageLabels: Record<typeof analyticsPages[number], string> = {
+  home: "Home",
+  builder: "Builder",
+  runes: "Runes",
+  boards: "Boards",
+  discover: "Discover",
+  credits: "Credits",
+  privacy: "Privacy",
+};
+
+function dayKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function shiftDay(day: string, offset: number) {
+  const date = new Date(`${day}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + offset);
+  return dayKey(date);
+}
+
+function emptyAnalyticsStats(): AnalyticsStats {
+  const create = () => Object.fromEntries(analyticsMetricKeys.map((key) => [key, 0])) as Record<AnalyticsMetricKey, number>;
+  return { today: create(), last7: create(), last30: create(), allTime: create() };
+}
+
+function addAnalyticsRow(target: Record<AnalyticsMetricKey, number>, row: AnalyticsDailyRow) {
+  for (const key of analyticsMetricKeys) target[key] += Number(row[key] ?? 0);
+}
+
+export function summarizeAnalytics(snapshot: AnalyticsSnapshot) {
+  const today = dayKey(new Date(snapshot.generatedAt));
+  const last7Start = shiftDay(today, -6);
+  const last30Start = shiftDay(today, -29);
+  const stats = emptyAnalyticsStats();
+
+  for (const row of snapshot.rows) {
+    if (row.day === today) addAnalyticsRow(stats.today, row);
+    if (row.day >= last7Start && row.day <= today) addAnalyticsRow(stats.last7, row);
+    if (row.day >= last30Start && row.day <= today) addAnalyticsRow(stats.last30, row);
+  }
+  for (const key of analyticsMetricKeys) stats.allTime[key] = Number(snapshot.totals[key] ?? 0);
+
+  return stats;
+}
+
+export function publicPageViewTotals(snapshot: AnalyticsSnapshot) {
+  const stats = summarizeAnalytics(snapshot);
+  return { total: stats.allTime.page_views, today: stats.today.page_views };
+}
+
+function formatInteger(value: number) {
+  return Math.max(0, Math.floor(value)).toLocaleString("en-US");
+}
+
+export function formatApplyRate(applied: number, started: number) {
+  if (started <= 0) return "0.0%";
+  return `${((applied / started) * 100).toFixed(1)}%`;
+}
+
+function formatTrafficLine(label: string, stats: Record<AnalyticsMetricKey, number>) {
+  return `${label.padEnd(12)} ${formatInteger(stats.unique_visitors).padStart(16)} ${formatInteger(stats.page_views).padStart(12)}`;
+}
+
+function formatMetricLine(label: string, stats: AnalyticsStats, key: AnalyticsMetricKey) {
+  return `${label.padEnd(17)} ${formatInteger(stats.today[key]).padStart(8)} ${formatInteger(stats.last7[key]).padStart(8)} ${formatInteger(stats.last30[key]).padStart(8)} ${formatInteger(stats.allTime[key]).padStart(10)}`;
+}
+
+export function renderAnalyticsDashboard(snapshot: AnalyticsSnapshot) {
+  const stats = summarizeAnalytics(snapshot);
+  const pageRanking = analyticsPages
+    .map((page) => ({ page, views: stats.allTime[page] }))
+    .sort((left, right) => right.views - left.views || pageLabels[left.page].localeCompare(pageLabels[right.page]));
+  const scannerRejectedOrErrors = {
+    today: stats.today.scans_rejected + stats.today.scan_errors,
+    last7: stats.last7.scans_rejected + stats.last7.scan_errors,
+    last30: stats.last30.scans_rejected + stats.last30.scan_errors,
+    allTime: stats.allTime.scans_rejected + stats.allTime.scan_errors,
+  };
+
+  return [
+    "Private Analytics Dashboard",
+    `Generated: ${snapshot.generatedAt}`,
+    "",
+    "Privacy boundary",
+    "Only aggregate counts and anonymous browser-generated SHA-256 visitor hashes are stored.",
+    "No IP address, country, inventory, screenshot, referrer, device details, scan contents, or raw identifier is stored.",
+    "",
+    "Traffic",
+    `${"Window".padEnd(12)} ${"Unique visitors".padStart(16)} ${"Page views".padStart(12)}`,
+    formatTrafficLine("Today", stats.today),
+    formatTrafficLine("Last 7 days", stats.last7),
+    formatTrafficLine("Last 30 days", stats.last30),
+    formatTrafficLine("All time", stats.allTime),
+    "",
+    "Most visited pages (all time)",
+    ...pageRanking.map(({ page, views }, index) => `${String(index + 1).padStart(2)}. ${pageLabels[page].padEnd(8)} ${formatInteger(views)}`),
+    "",
+    "Community activity",
+    `${"Metric".padEnd(17)} ${"Today".padStart(8)} ${"7 days".padStart(8)} ${"30 days".padStart(8)} ${"All time".padStart(10)}`,
+    formatMetricLine("Boards shared", stats, "boards_shared"),
+    formatMetricLine("Comments posted", stats, "comments_posted"),
+    "",
+    "Scanner health",
+    `${"Metric".padEnd(17)} ${"Today".padStart(8)} ${"7 days".padStart(8)} ${"30 days".padStart(8)} ${"All time".padStart(10)}`,
+    formatMetricLine("Scans started", stats, "scans_started"),
+    formatMetricLine("Scans applied", stats, "scans_applied"),
+    `${"Rejected/errors".padEnd(17)} ${formatInteger(scannerRejectedOrErrors.today).padStart(8)} ${formatInteger(scannerRejectedOrErrors.last7).padStart(8)} ${formatInteger(scannerRejectedOrErrors.last30).padStart(8)} ${formatInteger(scannerRejectedOrErrors.allTime).padStart(10)}`,
+    `${"Apply rate".padEnd(17)} ${formatApplyRate(stats.today.scans_applied, stats.today.scans_started).padStart(8)} ${formatApplyRate(stats.last7.scans_applied, stats.last7.scans_started).padStart(8)} ${formatApplyRate(stats.last30.scans_applied, stats.last30.scans_started).padStart(8)} ${formatApplyRate(stats.allTime.scans_applied, stats.allTime.scans_started).padStart(10)}`,
+    "",
+  ].join("\n");
+}
+
+function toIso(timestamp: number) {
+  return new Date(timestamp).toISOString();
+}
+
+function metricWindow(stats: AnalyticsStats, key: AnalyticsMetricKey) {
+  return {
+    today: stats.today[key],
+    last7: stats.last7[key],
+    last30: stats.last30[key],
+    allTime: stats.allTime[key],
+  };
+}
+
+export function buildControlStation(snapshot: AnalyticsSnapshot, health: HealthSnapshot) {
+  const stats = summarizeAnalytics(snapshot);
+  const daily = [...snapshot.rows]
+    .sort((left, right) => left.day.localeCompare(right.day))
+    .map((row) => ({
+      day: row.day,
+      uniqueVisitors: row.unique_visitors,
+      pageViews: row.page_views,
+      boardsShared: row.boards_shared,
+      commentsPosted: row.comments_posted,
+      scansStarted: row.scans_started,
+      scansApplied: row.scans_applied,
+      scansIssues: row.scans_rejected + row.scan_errors,
+    }));
+  const pages = analyticsPages
+    .map((page) => ({
+      id: page,
+      label: pageLabels[page],
+      last30: stats.last30[page],
+      allTime: stats.allTime[page],
+    }))
+    .sort((left, right) => right.allTime - left.allTime || left.label.localeCompare(right.label));
+  const checked = health.checks.length;
+  const healthy = health.checks.filter((check) => check.success).length;
+
+  return {
+    generatedAt: snapshot.generatedAt,
+    traffic: {
+      uniqueVisitors: metricWindow(stats, "unique_visitors"),
+      pageViews: metricWindow(stats, "page_views"),
+      daily,
+      pages,
+    },
+    community: {
+      boardsShared: metricWindow(stats, "boards_shared"),
+      commentsPosted: metricWindow(stats, "comments_posted"),
+    },
+    scanner: {
+      started: metricWindow(stats, "scans_started"),
+      applied: metricWindow(stats, "scans_applied"),
+      rejected: metricWindow(stats, "scans_rejected"),
+      errors: metricWindow(stats, "scan_errors"),
+      applyRate: {
+        today: formatApplyRate(stats.today.scans_applied, stats.today.scans_started),
+        last7: formatApplyRate(stats.last7.scans_applied, stats.last7.scans_started),
+        last30: formatApplyRate(stats.last30.scans_applied, stats.last30.scans_started),
+        allTime: formatApplyRate(stats.allTime.scans_applied, stats.allTime.scans_started),
+      },
+    },
+    health: {
+      lastCheck: health.lastCheck,
+      availability: checked > 0 ? Number(((healthy / checked) * 100).toFixed(2)) : null,
+      checks: health.checks,
+      outages: health.outages,
+      incidents: health.incidents,
+    },
+  };
+}
+
 export class PresenceCounter {
   constructor(private readonly state: DurableObjectState) {
     // Retire the former heartbeat data; the visitor total stores no identifiers.
     this.state.storage.sql.exec("DROP TABLE IF EXISTS presence");
     this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS visitor_totals (id INTEGER PRIMARY KEY, total INTEGER NOT NULL)");
     this.state.storage.sql.exec("INSERT OR IGNORE INTO visitor_totals (id, total) VALUES (1, 0)");
+    this.state.storage.sql.exec(`
+      CREATE TABLE IF NOT EXISTS analytics_daily (
+        day TEXT PRIMARY KEY,
+        unique_visitors INTEGER NOT NULL DEFAULT 0,
+        page_views INTEGER NOT NULL DEFAULT 0,
+        home INTEGER NOT NULL DEFAULT 0,
+        builder INTEGER NOT NULL DEFAULT 0,
+        runes INTEGER NOT NULL DEFAULT 0,
+        boards INTEGER NOT NULL DEFAULT 0,
+        discover INTEGER NOT NULL DEFAULT 0,
+        credits INTEGER NOT NULL DEFAULT 0,
+        privacy INTEGER NOT NULL DEFAULT 0,
+        boards_shared INTEGER NOT NULL DEFAULT 0,
+        comments_posted INTEGER NOT NULL DEFAULT 0,
+        scans_started INTEGER NOT NULL DEFAULT 0,
+        scans_applied INTEGER NOT NULL DEFAULT 0,
+        scans_rejected INTEGER NOT NULL DEFAULT 0,
+        scan_errors INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS analytics_unique_daily (day TEXT NOT NULL, visitor_hash TEXT NOT NULL, PRIMARY KEY (day, visitor_hash))");
+    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS analytics_unique_all_time (visitor_hash TEXT PRIMARY KEY)");
+    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS analytics_totals (metric TEXT PRIMARY KEY, total INTEGER NOT NULL DEFAULT 0)");
+    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS service_checks (checked_at INTEGER PRIMARY KEY, success INTEGER NOT NULL, latency_ms INTEGER NOT NULL)");
+    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS service_outages (outage_id INTEGER PRIMARY KEY AUTOINCREMENT, started_at INTEGER NOT NULL, last_seen_at INTEGER NOT NULL, resolved_at INTEGER, failed_checks INTEGER NOT NULL DEFAULT 1)");
+    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS incident_rollups (bucket_start INTEGER NOT NULL, source TEXT NOT NULL, code TEXT NOT NULL, severity TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 1, last_seen_at INTEGER NOT NULL, PRIMARY KEY (bucket_start, source, code))");
+    this.state.storage.sql.exec("CREATE TABLE IF NOT EXISTS control_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)");
+    for (const metric of analyticsMetricKeys) {
+      this.state.storage.sql.exec("INSERT OR IGNORE INTO analytics_totals (metric, total) VALUES (?, 0)", metric);
+    }
   }
 
   async fetch(request: Request): Promise<Response> {
-    if (!['GET', 'POST'].includes(request.method) || new URL(request.url).pathname !== "/total") {
-      return Response.json({ error: "Not found" }, { status: 404 });
+    const url = new URL(request.url);
+    if (url.pathname === "/total") {
+      if (!["GET", "POST"].includes(request.method)) return Response.json({ error: "Method not allowed" }, { status: 405 });
+      if (request.method === "POST") this.state.storage.sql.exec("UPDATE visitor_totals SET total = total + 1 WHERE id = 1");
+      const [{ total = 0 } = {}] = this.state.storage.sql.exec<{ total: number }>("SELECT total FROM visitor_totals WHERE id = 1").toArray();
+      return Response.json({ total }, { headers: { "Cache-Control": "no-store" } });
     }
 
-    if (request.method === "POST") this.state.storage.sql.exec("UPDATE visitor_totals SET total = total + 1 WHERE id = 1");
-    const [{ total = 0 } = {}] = this.state.storage.sql.exec<{ total: number }>("SELECT total FROM visitor_totals WHERE id = 1").toArray();
-    return Response.json({ total }, { headers: { "Cache-Control": "no-store" } });
+    if (url.pathname === "/analytics/event") {
+      if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
+      const parsed = analyticsEventSchema.safeParse(await request.json().catch(() => null));
+      if (!parsed.success) return Response.json({ error: "Invalid analytics payload" }, { status: 400 });
+      this.recordAnalyticsEvent(parsed.data);
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+    }
+
+    if (url.pathname === "/analytics/page-views") {
+      if (request.method !== "GET") return Response.json({ error: "Method not allowed" }, { status: 405 });
+      return Response.json(publicPageViewTotals(this.analyticsSnapshot()), {
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Security-Policy": "default-src 'none'",
+          "X-Content-Type-Options": "nosniff",
+          "Referrer-Policy": "no-referrer",
+        },
+      });
+    }
+
+    if (url.pathname === "/analytics/community") {
+      if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
+      const parsed = analyticsCommunitySchema.safeParse(await request.json().catch(() => null));
+      if (!parsed.success) return Response.json({ error: "Invalid analytics payload" }, { status: 400 });
+      this.recordDailyMetric(parsed.data.metric);
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+    }
+
+    if (url.pathname === "/analytics/health") {
+      if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
+      const parsed = analyticsHealthSchema.safeParse(await request.json().catch(() => null));
+      if (!parsed.success) return Response.json({ error: "Invalid health payload" }, { status: 400 });
+      this.recordHealthProbe(parsed.data);
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+    }
+
+    if (url.pathname === "/analytics/incident") {
+      if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
+      const parsed = analyticsIncidentSchema.safeParse(await request.json().catch(() => null));
+      if (!parsed.success) return Response.json({ error: "Invalid incident payload" }, { status: 400 });
+      this.recordIncident(parsed.data);
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+    }
+
+    if (url.pathname === "/analytics/dashboard") {
+      if (request.method !== "GET") return Response.json({ error: "Method not allowed" }, { status: 405 });
+      return new Response(renderAnalyticsDashboard(this.analyticsSnapshot()), {
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+          "Referrer-Policy": "no-referrer",
+        },
+      });
+    }
+
+    if (url.pathname === "/analytics/control-station") {
+      if (request.method !== "GET") return Response.json({ error: "Method not allowed" }, { status: 405 });
+      return Response.json(buildControlStation(this.analyticsSnapshot(), this.healthSnapshot()), {
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Security-Policy": "default-src 'none'",
+          "X-Content-Type-Options": "nosniff",
+          "Referrer-Policy": "no-referrer",
+        },
+      });
+    }
+
+    if (url.pathname === "/analytics/cleanup") {
+      if (request.method !== "POST") return Response.json({ error: "Method not allowed" }, { status: 405 });
+      this.cleanupAnalytics();
+      return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+    }
+
+    return Response.json({ error: "Not found" }, { status: 404 });
+  }
+
+  private ensureDailyRow(day = dayKey()) {
+    this.state.storage.sql.exec("INSERT OR IGNORE INTO analytics_daily (day) VALUES (?)", day);
+    return day;
+  }
+
+  private incrementTotal(metric: AnalyticsMetricKey, amount = 1) {
+    this.state.storage.sql.exec("UPDATE analytics_totals SET total = total + ? WHERE metric = ?", amount, metric);
+  }
+
+  private incrementDaily(day: string, metric: AnalyticsMetricKey, amount = 1) {
+    this.state.storage.sql.exec(`UPDATE analytics_daily SET ${metric} = ${metric} + ? WHERE day = ?`, amount, day);
+    this.incrementTotal(metric, amount);
+  }
+
+  private recordDailyVisitor(day: string, visitorHash: string) {
+    this.state.storage.sql.exec("INSERT OR IGNORE INTO analytics_unique_daily (day, visitor_hash) VALUES (?, ?)", day, visitorHash);
+    const [{ changed: dailyChanged = 0 } = {}] = this.state.storage.sql.exec<{ changed: number }>("SELECT changes() AS changed").toArray();
+    if (dailyChanged > 0) this.state.storage.sql.exec("UPDATE analytics_daily SET unique_visitors = unique_visitors + 1 WHERE day = ?", day);
+
+    this.state.storage.sql.exec("INSERT OR IGNORE INTO analytics_unique_all_time (visitor_hash) VALUES (?)", visitorHash);
+    const [{ changed: allTimeChanged = 0 } = {}] = this.state.storage.sql.exec<{ changed: number }>("SELECT changes() AS changed").toArray();
+    if (allTimeChanged > 0) this.incrementTotal("unique_visitors");
+  }
+
+  private recordAnalyticsEvent(event: z.infer<typeof analyticsEventSchema>) {
+    const day = this.ensureDailyRow();
+    this.recordDailyVisitor(day, event.visitorHash);
+    if (event.event === "page_view") {
+      this.incrementDaily(day, "page_views");
+      this.incrementDaily(day, event.page);
+    } else if (event.event === "scanner_started") {
+      this.incrementDaily(day, "scans_started");
+    } else if (event.event === "scanner_applied") {
+      this.incrementDaily(day, "scans_applied");
+    } else if (event.event === "scanner_rejected") {
+      this.incrementDaily(day, "scans_rejected");
+    } else {
+      this.incrementDaily(day, "scan_errors");
+      this.recordIncident({ source: "scanner", code: "scan_processing_failed", severity: "error" });
+    }
+    this.cleanupAnalytics();
+  }
+
+  private recordDailyMetric(metric: "boards_shared" | "comments_posted") {
+    const day = this.ensureDailyRow();
+    this.incrementDaily(day, metric);
+    this.cleanupAnalytics();
+  }
+
+  private cleanupAnalytics() {
+    const cutoff = shiftDay(dayKey(), -analyticsRetentionDays);
+    this.state.storage.sql.exec("DELETE FROM analytics_daily WHERE day < ?", cutoff);
+    this.state.storage.sql.exec("DELETE FROM analytics_unique_daily WHERE day < ?", cutoff);
+  }
+
+  private recordHealthProbe(probe: z.infer<typeof analyticsHealthSchema>) {
+    const [{ value: healthSchemaVersion = "" } = {}] = this.state.storage.sql.exec<{ value: string }>("SELECT value FROM control_metadata WHERE key = 'health_schema_version'").toArray();
+    if (healthSchemaVersion !== "subsystem-v2") {
+      this.state.storage.sql.exec("DELETE FROM service_checks");
+      this.state.storage.sql.exec("DELETE FROM service_outages");
+      this.state.storage.sql.exec("INSERT OR REPLACE INTO control_metadata (key, value) VALUES ('health_schema_version', 'subsystem-v2')");
+    }
+    const now = Date.now();
+    this.state.storage.sql.exec("INSERT OR REPLACE INTO service_checks (checked_at, success, latency_ms) VALUES (?, ?, ?)", now, probe.success ? 1 : 0, probe.latencyMs);
+    if (probe.success) {
+      this.state.storage.sql.exec("UPDATE service_outages SET resolved_at = ? WHERE resolved_at IS NULL", now);
+    } else {
+      const [openOutage] = this.state.storage.sql.exec<{ outage_id: number }>("SELECT outage_id FROM service_outages WHERE resolved_at IS NULL ORDER BY outage_id DESC LIMIT 1").toArray();
+      if (openOutage) {
+        this.state.storage.sql.exec("UPDATE service_outages SET last_seen_at = ?, failed_checks = failed_checks + 1 WHERE outage_id = ?", now, openOutage.outage_id);
+      } else {
+        this.state.storage.sql.exec("INSERT INTO service_outages (started_at, last_seen_at, failed_checks) VALUES (?, ?, 1)", now, now);
+      }
+    }
+    this.cleanupControlStation();
+  }
+
+  private recordIncident(incident: z.infer<typeof analyticsIncidentSchema>) {
+    const now = Date.now();
+    const bucketStart = Math.floor(now / (15 * 60 * 1000)) * 15 * 60 * 1000;
+    this.state.storage.sql.exec(
+      "INSERT INTO incident_rollups (bucket_start, source, code, severity, count, last_seen_at) VALUES (?, ?, ?, ?, 1, ?) ON CONFLICT(bucket_start, source, code) DO UPDATE SET count = count + 1, last_seen_at = excluded.last_seen_at",
+      bucketStart,
+      incident.source,
+      incident.code,
+      incident.severity,
+      now,
+    );
+    this.cleanupControlStation();
+  }
+
+  private cleanupControlStation() {
+    const now = Date.now();
+    this.state.storage.sql.exec("DELETE FROM service_checks WHERE checked_at < ?", now - healthRetentionDays * 24 * 60 * 60 * 1000);
+    this.state.storage.sql.exec("DELETE FROM service_outages WHERE COALESCE(resolved_at, last_seen_at) < ?", now - incidentRetentionDays * 24 * 60 * 60 * 1000);
+    this.state.storage.sql.exec("DELETE FROM incident_rollups WHERE last_seen_at < ?", now - incidentRetentionDays * 24 * 60 * 60 * 1000);
+  }
+
+  private analyticsSnapshot(): AnalyticsSnapshot {
+    this.cleanupAnalytics();
+    const last30Start = shiftDay(dayKey(), -29);
+    const rows = this.state.storage.sql.exec<AnalyticsDailyRow>(
+      "SELECT day, unique_visitors, page_views, home, builder, runes, boards, discover, credits, privacy, boards_shared, comments_posted, scans_started, scans_applied, scans_rejected, scan_errors FROM analytics_daily WHERE day >= ? ORDER BY day DESC",
+      last30Start,
+    ).toArray();
+    const totalsRows = this.state.storage.sql.exec<{ metric: AnalyticsMetricKey; total: number }>("SELECT metric, total FROM analytics_totals").toArray();
+    const totals = Object.fromEntries(totalsRows.map((row) => [row.metric, row.total])) as AnalyticsTotals;
+    return { generatedAt: new Date().toISOString(), rows, totals };
+  }
+
+  private healthSnapshot(): HealthSnapshot {
+    this.cleanupControlStation();
+    const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const checks = this.state.storage.sql.exec<{ checked_at: number; success: number; latency_ms: number }>(
+      "SELECT checked_at, success, latency_ms FROM service_checks WHERE checked_at >= ? ORDER BY checked_at ASC",
+      since,
+    ).toArray().map((check) => ({ checkedAt: toIso(check.checked_at), success: check.success === 1, latencyMs: check.latency_ms }));
+    const lastCheck = checks.at(-1) ?? null;
+    const outages = this.state.storage.sql.exec<{ started_at: number; last_seen_at: number; resolved_at: number | null; failed_checks: number }>(
+      "SELECT started_at, last_seen_at, resolved_at, failed_checks FROM service_outages ORDER BY started_at DESC LIMIT 40",
+    ).toArray().map((outage) => ({
+      startedAt: toIso(outage.started_at),
+      lastSeenAt: toIso(outage.last_seen_at),
+      resolvedAt: outage.resolved_at ? toIso(outage.resolved_at) : null,
+      failedChecks: outage.failed_checks,
+    }));
+    const incidents = this.state.storage.sql.exec<{ bucket_start: number; last_seen_at: number; source: string; code: string; severity: "warning" | "error"; count: number }>(
+      "SELECT bucket_start, last_seen_at, source, code, severity, count FROM incident_rollups ORDER BY last_seen_at DESC LIMIT 80",
+    ).toArray().map((incident) => ({
+      occurredAt: toIso(incident.bucket_start),
+      lastSeenAt: toIso(incident.last_seen_at),
+      source: incident.source,
+      code: incident.code,
+      severity: incident.severity,
+      count: incident.count,
+    }));
+    return { lastCheck, checks, outages, incidents };
   }
 }
 
@@ -83,6 +562,19 @@ function jsonWithHeaders(body: unknown, status = 200, cacheControl = "no-store",
   const response = json(body, status, cacheControl, requestId);
   for (const [name, value] of Object.entries(headers)) response.headers.set(name, value);
   return response;
+}
+
+function plainText(body: string, status = 200) {
+  return new Response(body, {
+    status,
+    headers: {
+      "Cache-Control": "no-store",
+      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Security-Policy": "default-src 'none'",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "no-referrer",
+    },
+  });
 }
 
 async function sha256(value: string) {
@@ -476,6 +968,9 @@ async function handleBoards(request: Request, env: Env, url: URL, ctx: Execution
       throw error;
     }
     await invalidateBoardListCache(request, ctx);
+    ctx.waitUntil(recordAnalyticsMetric(env, "boards_shared").catch((error) => {
+      console.warn(JSON.stringify({ event: "analytics_board_share_error", error: error instanceof Error ? error.message : "unknown" }));
+    }));
     return json({ boardId, updatedAt: now, cooldownUntil: new Date(cooldown.cooldownUntil).toISOString() }, 201);
   }
 
@@ -542,6 +1037,9 @@ async function handleBoardComments(request: Request, env: Env, boardId: string, 
   await env.DB.prepare("INSERT INTO community_board_comments (comment_id, board_id, commenter_hash, body, created_at) VALUES (?, ?, ?, ?, ?)")
     .bind(comment.commentId, boardId, commenterHash, comment.body, comment.createdAt).run();
   await invalidateBoardListCache(request, ctx);
+  ctx.waitUntil(recordAnalyticsMetric(env, "comments_posted").catch((error) => {
+    console.warn(JSON.stringify({ event: "analytics_comment_error", error: error instanceof Error ? error.message : "unknown" }));
+  }));
   return json({ comment }, 201);
 }
 
@@ -646,10 +1144,119 @@ async function handleVisitorTotal(request: Request, env: Env) {
   return json(body, response.status);
 }
 
+async function handlePageViewTotal(request: Request, env: Env) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+  if (!sameOrigin(request)) return json({ error: "Invalid request origin" }, 403);
+
+  const clientIp = request.headers.get("CF-Connecting-IP") ?? "local";
+  const rate = await env.SYNC_RATE_LIMITER.limit({ key: `page-views:${clientIp}` });
+  if (!rate.success) return json({ error: "Too many page-view count requests. Try again shortly." }, 429);
+
+  const response = await analyticsCounter(env).fetch("https://analytics.internal/analytics/page-views");
+  const body = await response.json().catch(() => ({ error: "Page-view count unavailable" }));
+  return json(body, response.status);
+}
+
+function analyticsCounter(env: Env) {
+  return env.PRESENCE.get(env.PRESENCE.idFromName("site-visitor-total"));
+}
+
+async function recordAnalyticsMetric(env: Env, metric: "boards_shared" | "comments_posted") {
+  await analyticsCounter(env).fetch("https://analytics.internal/analytics/community", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ metric }),
+  });
+}
+
+async function recordControlIncident(env: Env, incident: z.infer<typeof analyticsIncidentSchema>) {
+  await analyticsCounter(env).fetch("https://analytics.internal/analytics/incident", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(incident),
+  });
+}
+
+async function recordHealthProbe(env: Env) {
+  const startedAt = Date.now();
+  let success = false;
+  try {
+    const database = await env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
+    const counter = await analyticsCounter(env).fetch("https://analytics.internal/total");
+    success = database?.ok === 1 && counter.ok;
+  } catch {
+    success = false;
+  }
+  await analyticsCounter(env).fetch("https://analytics.internal/analytics/health", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ success, latencyMs: Math.min(60_000, Date.now() - startedAt) }),
+  });
+}
+
+async function handleAnalyticsEvent(request: Request, env: Env) {
+  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (!sameOrigin(request)) return json({ error: "Invalid request origin" }, 403);
+
+  let parsed: z.infer<typeof analyticsEventSchema>;
+  try { parsed = analyticsEventSchema.parse(await readJson(request)); }
+  catch (error) {
+    if (error instanceof Response) return error;
+    return json({ error: "Invalid analytics payload" }, 400);
+  }
+
+  const rate = await env.SYNC_RATE_LIMITER.limit({ key: `analytics:${parsed.visitorHash}` });
+  if (!rate.success) return json({ error: "Analytics rate limit exceeded" }, 429);
+
+  const response = await analyticsCounter(env).fetch("https://analytics.internal/analytics/event", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(parsed),
+  });
+  if (!response.ok && response.status !== 204) return json({ error: "Analytics unavailable" }, 503);
+  return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+}
+
+async function handleModeratorAnalytics(request: Request, env: ModeratorEnv) {
+  if (request.method !== "GET") return plainText("Method not allowed\n", 405);
+  if (!(await isModerator(request, env))) return plainText("Moderator authentication required\n", 401);
+  const response = await analyticsCounter(env).fetch("https://analytics.internal/analytics/dashboard");
+  if (!response.ok) return plainText("Analytics unavailable\n", 503);
+  return plainText(await response.text());
+}
+
+async function handleModeratorDashboard(request: Request, env: ModeratorEnv) {
+  if (request.method !== "GET") return json({ error: "Method not allowed" }, 405);
+  if (!(await isModerator(request, env))) return json({ error: "Moderator authentication required" }, 401);
+  const response = await analyticsCounter(env).fetch("https://analytics.internal/analytics/control-station");
+  if (!response.ok) return json({ error: "Control station is unavailable" }, 503);
+  return json(await response.json());
+}
+
+async function handleModeratorDashboardPage(request: Request, env: ModeratorEnv) {
+  if (request.method !== "GET") return plainText("Method not allowed\n", 405);
+  if (!(await isModerator(request, env))) return plainText("Moderator authentication required\n", 401);
+  const response = await env.ASSETS.fetch(request);
+  const headers = new Headers(response.headers);
+  headers.set("Cache-Control", "no-store");
+  headers.set("Referrer-Policy", "no-referrer");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
 export default {
   async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === "/api/health") return json({ ok: true, service: "fluz-ld-tools" });
+    const moderatorEnv = env as ModeratorEnv;
+    if (moderatorDashboardPagePattern.test(url.pathname)) {
+      const requestId = crypto.randomUUID();
+      try { return await handleModeratorDashboardPage(request, moderatorEnv); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "moderator_dashboard_page_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        ctx.waitUntil(recordControlIncident(env, { source: "moderation", code: "moderation_operation_failed", severity: "error" }).catch(() => undefined));
+        return plainText("Control station unavailable\n", 503);
+      }
+    }
     if (url.pathname === "/api/visits") {
       const requestId = crypto.randomUUID();
       try { return await handleVisitorTotal(request, env); }
@@ -658,13 +1265,47 @@ export default {
         return json({ error: "Visitor count unavailable" }, 503, "no-store", requestId);
       }
     }
-    const moderatorEnv = env as ModeratorEnv;
+    if (url.pathname === "/api/page-views") {
+      const requestId = crypto.randomUUID();
+      try { return await handlePageViewTotal(request, env); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "page_view_total_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return json({ error: "Page-view count unavailable" }, 503, "no-store", requestId);
+      }
+    }
+    if (analyticsEventPattern.test(url.pathname)) {
+      const requestId = crypto.randomUUID();
+      try { return await handleAnalyticsEvent(request, env); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "analytics_event_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        return new Response(null, { status: 204, headers: { "Cache-Control": "no-store" } });
+      }
+    }
+    if (moderatorDashboardPattern.test(url.pathname)) {
+      const requestId = crypto.randomUUID();
+      try { return await handleModeratorDashboard(request, moderatorEnv); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "moderator_dashboard_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        ctx.waitUntil(recordControlIncident(env, { source: "moderation", code: "moderation_operation_failed", severity: "error" }).catch(() => undefined));
+        return json({ error: "Control station unavailable" }, 503, "no-store", requestId);
+      }
+    }
+    if (moderatorAnalyticsPattern.test(url.pathname)) {
+      const requestId = crypto.randomUUID();
+      try { return await handleModeratorAnalytics(request, moderatorEnv); }
+      catch (error) {
+        console.error(JSON.stringify({ event: "moderator_analytics_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        ctx.waitUntil(recordControlIncident(env, { source: "analytics", code: "analytics_unavailable", severity: "error" }).catch(() => undefined));
+        return plainText("Analytics unavailable\n", 503);
+      }
+    }
     const moderatorBoardMatch = moderatorBoardPattern.exec(url.pathname);
     if (moderatorBoardMatch) {
       const requestId = crypto.randomUUID();
       try { return await handleModeratorBoard(request, moderatorEnv, moderatorBoardMatch[1].toLowerCase(), ctx); }
       catch (error) {
         console.error(JSON.stringify({ event: "moderator_board_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        ctx.waitUntil(recordControlIncident(env, { source: "moderation", code: "moderation_operation_failed", severity: "error" }).catch(() => undefined));
         return json({ error: "Internal error" }, 500, "no-store", requestId);
       }
     }
@@ -674,6 +1315,7 @@ export default {
       try { return await handleModeratorComment(request, moderatorEnv, moderatorCommentMatch[1].toLowerCase(), moderatorCommentMatch[2].toLowerCase(), ctx); }
       catch (error) {
         console.error(JSON.stringify({ event: "moderator_comment_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        ctx.waitUntil(recordControlIncident(env, { source: "moderation", code: "moderation_operation_failed", severity: "error" }).catch(() => undefined));
         return json({ error: "Internal error" }, 500, "no-store", requestId);
       }
     }
@@ -710,6 +1352,7 @@ export default {
       try { return await handleBoards(request, env, url, ctx); }
       catch (error) {
         console.error(JSON.stringify({ event: "boards_error", requestId, error: error instanceof Error ? error.message : "unknown" }));
+        ctx.waitUntil(recordControlIncident(env, { source: "boards", code: "board_operation_failed", severity: "error" }).catch(() => undefined));
         return json({ error: "Internal error" }, 500, "no-store", requestId);
       }
     }
@@ -719,15 +1362,23 @@ export default {
       return await handleSync(request, env, match[1].toLowerCase(), match[2]);
     } catch (error) {
       console.error(JSON.stringify({ event: "sync_error", path: url.pathname, error: error instanceof Error ? error.message : "unknown" }));
+      ctx.waitUntil(recordControlIncident(env, { source: "sync", code: "sync_operation_failed", severity: "error" }).catch(() => undefined));
       return json({ error: "Internal error" }, 500);
     }
   },
-  scheduled(_controller, env, ctx) {
-    ctx.waitUntil(env.DB.batch([
-      env.DB.prepare("DELETE FROM community_board_comments WHERE created_at < datetime('now', '-90 days')"),
-      env.DB.prepare("DELETE FROM community_board_reports WHERE created_at < datetime('now', '-90 days')"),
-      env.DB.prepare("DELETE FROM community_boards WHERE updated_at < datetime('now', '-90 days')"),
-      env.DB.prepare("DELETE FROM board_share_cooldowns WHERE cooldown_until < ?").bind(Date.now() - 24 * 60 * 60 * 1000),
-    ]));
+  scheduled(controller, env, ctx) {
+    const scheduledAt = new Date(controller.scheduledTime);
+    const maintenanceDue = scheduledAt.getUTCHours() === 3 && scheduledAt.getUTCMinutes() === 0;
+    const work: Promise<unknown>[] = [recordHealthProbe(env)];
+    if (maintenanceDue) {
+      work.push(env.DB.batch([
+        env.DB.prepare("DELETE FROM community_board_comments WHERE created_at < datetime('now', '-90 days')"),
+        env.DB.prepare("DELETE FROM community_board_reports WHERE created_at < datetime('now', '-90 days')"),
+        env.DB.prepare("DELETE FROM community_boards WHERE updated_at < datetime('now', '-90 days')"),
+        env.DB.prepare("DELETE FROM board_share_cooldowns WHERE cooldown_until < ?").bind(Date.now() - 24 * 60 * 60 * 1000),
+      ]));
+      work.push(analyticsCounter(env).fetch("https://analytics.internal/analytics/cleanup", { method: "POST" }));
+    }
+    ctx.waitUntil(Promise.all(work));
   },
 } satisfies ExportedHandler<Env>;

@@ -1,7 +1,8 @@
 /// <reference lib="webworker" />
 
 import type { ScanCrop, ScanDetection, ScanImageResult, ScanResult, ScanTemplate } from "./inventory-scanner";
-import { classifyRuneTier, findFiveColumnGrid, matchTemplateMask, normalizeMask, type ScanBox, type TemplateMask } from "./inventory-scanner-vision";
+import type { RuneTier } from "../model";
+import { classifyRuneTier, findFiveColumnGrid, matchTemplateMask, normalizeMask, regularizeGridRows, type ScanBox, type TemplateMask } from "./inventory-scanner-vision";
 
 type ScanRequest = {
   type: "scan";
@@ -31,6 +32,35 @@ function colorMatches(r: number, g: number, b: number) {
   return (color.saturation > 0.48 && color.value > 0.38 && color.hue < 80)
     || (color.saturation > 0.42 && color.value > 0.35 && color.hue > 175 && color.hue < 330)
     || (color.saturation < 0.38 && color.value > 0.48);
+}
+
+function collectTileHue(bitmap: ImageBitmap, box: ScanBox) {
+  const canvas = new OffscreenCanvas(32, 32);
+  const context = canvas.getContext("2d", { willReadFrequently: true })!;
+  const inset = Math.min(box.width, box.height) * .16;
+  context.drawImage(bitmap, box.x + inset, box.y + inset, box.width - inset * 2, box.height - inset * 2, 0, 0, 32, 32);
+  const data = context.getImageData(0, 0, 32, 32).data;
+  let total = 0;
+  let x = 0;
+  let y = 0;
+  for (let index = 0; index < data.length; index += 4) {
+    const color = hsv(data[index], data[index + 1], data[index + 2]);
+    if (color.saturation < .42 || color.value < .34) continue;
+    if (!(color.hue < 86 || color.hue > 240)) continue;
+    total++;
+    const radians = color.hue * Math.PI / 180;
+    x += Math.cos(radians);
+    y += Math.sin(radians);
+  }
+  if (total < 24) return null;
+  const hue = (Math.atan2(y / total, x / total) * 180 / Math.PI + 360) % 360;
+  return hue;
+}
+
+function classifyTileTier(bitmap: ImageBitmap, box: ScanBox): RuneTier {
+  const innerHue = collectTileHue(bitmap, box);
+  if (innerHue != null) return classifyRuneTier(innerHue);
+  return (box.saturation ?? 1) < .32 ? 1 : classifyRuneTier(box.hue);
 }
 
 function findColorBoxes(bitmap: ImageBitmap, crop: ScanCrop): ScanBox[] {
@@ -89,7 +119,7 @@ async function buildTemplates(templates: ScanTemplate[]) {
       const r = data[index * 4]; const g = data[index * 4 + 1]; const b = data[index * 4 + 2];
       mask[index] = data[index * 4 + 3] > 100 && r > 175 && g > 175 && b > 175 && Math.max(r, g, b) - Math.min(r, g, b) < 95 ? 1 : 0;
     }
-    result.push({ id: template.id, mask: normalizeMask(mask) });
+    result.push({ id: template.id, mask, normalizedMask: normalizeMask(mask) });
   }
   return result;
 }
@@ -105,7 +135,7 @@ function tileMask(bitmap: ImageBitmap, box: ScanBox) {
     const r = data[index * 4]; const g = data[index * 4 + 1]; const b = data[index * 4 + 2];
     mask[index] = r > 175 && g > 175 && b > 175 && Math.max(r, g, b) - Math.min(r, g, b) < 95 ? 1 : 0;
   }
-  return normalizeMask(mask);
+  return mask;
 }
 
 async function scanOne(image: ScanRequest["images"][number], crop: ScanCrop, templates: TemplateMask[]): Promise<ScanImageResult> {
@@ -116,13 +146,13 @@ async function scanOne(image: ScanRequest["images"][number], crop: ScanCrop, tem
     // that strip before reconstructing rows. A final row may contain fewer
     // than five tiles, and gray Common frames must not invalidate the row.
     const inventoryBoxes = findColorBoxes(bitmap, crop).filter((box) => box.y >= bitmap.height * .35);
-    const rows = findFiveColumnGrid(inventoryBoxes, 2);
+    const rows = regularizeGridRows(findFiveColumnGrid(inventoryBoxes, 2));
     const warnings: string[] = [];
     if (!rows.length) warnings.push("No rune inventory grid was found. Use a clean Rune-tab screenshot or adjust the scan area.");
     const detections: ScanDetection[] = []; let lowerTierCount = 0;
     for (const row of rows) {
       for (const box of row) {
-        const tier = (box.saturation ?? 1) < .32 ? 1 : classifyRuneTier(box.hue);
+        const tier = classifyTileTier(bitmap, box);
         if (tier < 3) { lowerTierCount++; continue; }
         const match = matchTemplateMask(tileMask(bitmap, box), templates);
         if (match.confidence < .22) {

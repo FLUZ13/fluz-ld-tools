@@ -1,18 +1,19 @@
 import { ArrowRight, Cloud, Compass, Grid3X3, History, Redo2, TableProperties, Undo2, WandSparkles } from "lucide-react";
-import { Component, lazy, Suspense, useEffect, useMemo, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useMemo, useState, type ErrorInfo, type ReactNode } from "react";
 import { ConflictDialog } from "./components/ConflictDialog";
 import { HistoryDialog } from "./components/HistoryDialog";
 import { Inventory } from "./components/Inventory";
 import { Results } from "./components/Results";
 import { Roster } from "./components/Roster";
-import { SyncDialog } from "./components/SyncDialog";
 import { useBuilderStore } from "./hooks/useBuilderStore";
+import { installPageAnalytics } from "./lib/analytics";
 import { optimizeAssignments } from "./lib/optimizer";
-import { DATA, LATEST_META_VERSION, META_VERSIONS, countOwnedRunes, type GameMode, type MetaVersion } from "./model";
+import { DATA, LATEST_META_VERSION, META_VERSIONS, countOwnedRunes, metaVersionLabel, type GameMode, type MetaVersion } from "./model";
 
 const BoardBuilder = lazy(() => import("./components/BoardBuilder").then((module) => ({ default: module.BoardBuilder })));
 const Credits = lazy(() => import("./components/Credits").then((module) => ({ default: module.Credits })));
 const DiscoverBoards = lazy(() => import("./components/DiscoverBoards").then((module) => ({ default: module.DiscoverBoards })));
+const ModeratorDashboard = lazy(() => import("./components/ModeratorDashboard").then((module) => ({ default: module.ModeratorDashboard })));
 const RunesReference = lazy(() => import("./components/RunesReference").then((module) => ({ default: module.RunesReference })));
 
 type MobileTab = "inventory" | "roster" | "results";
@@ -66,10 +67,10 @@ function PageNavigation({ active }: { active: PageId | null }) {
   );
 }
 
-const VISIT_REGISTERED_KEY = "ld-total-visit-registered";
-const VISIT_TOTAL_KEY = "ld-total-visit-count";
-const VISIT_TOTAL_REFRESH_KEY = "ld-total-visit-refreshed-at";
-const VISIT_TOTAL_REFRESH_MS = 60 * 60 * 1000;
+const PAGE_VIEW_TOTAL_KEY = "ld-page-view-count";
+const PAGE_VIEW_TODAY_KEY = "ld-page-view-count-today";
+const PAGE_VIEW_REFRESH_KEY = "ld-page-view-count-refreshed-at";
+const PAGE_VIEW_REFRESH_MS = 60 * 60 * 1000;
 
 function readStoredNumber(key: string) {
   try {
@@ -80,65 +81,57 @@ function readStoredNumber(key: string) {
   }
 }
 
-function TotalVisitorCount() {
-  const [total, setTotal] = useState<number | null>(() => readStoredNumber(VISIT_TOTAL_KEY));
+function PageViewCount() {
+  const [views, setViews] = useState(() => ({
+    total: readStoredNumber(PAGE_VIEW_TOTAL_KEY),
+    today: readStoredNumber(PAGE_VIEW_TODAY_KEY),
+  }));
 
   useEffect(() => {
     let active = true;
-    const registered = (() => {
-      try { return window.localStorage.getItem(VISIT_REGISTERED_KEY) === "1"; }
-      catch { return false; }
-    })();
-    const lastRefresh = readStoredNumber(VISIT_TOTAL_REFRESH_KEY) ?? 0;
-    if (registered && Date.now() - lastRefresh < VISIT_TOTAL_REFRESH_MS) return;
+    const lastRefresh = readStoredNumber(PAGE_VIEW_REFRESH_KEY) ?? 0;
+    if (views.total !== null && Date.now() - lastRefresh < PAGE_VIEW_REFRESH_MS) return;
 
-    const loadTotal = async () => {
+    const loadViews = async () => {
       try {
-        const response = await fetch("/api/visits", {
-          method: registered ? "GET" : "POST",
-          cache: "no-store",
-          keepalive: !registered,
-        });
+        const response = await fetch("/api/page-views", { cache: "no-store" });
         if (!response.ok) return;
         const payload: unknown = await response.json();
-        if (!payload || typeof payload !== "object" || !("total" in payload) || typeof payload.total !== "number") return;
+        if (!payload || typeof payload !== "object" || !("total" in payload) || !("today" in payload) || typeof payload.total !== "number" || typeof payload.today !== "number") return;
         const nextTotal = Math.max(0, Math.floor(payload.total));
+        const nextToday = Math.max(0, Math.floor(payload.today));
         try {
-          window.localStorage.setItem(VISIT_TOTAL_KEY, String(nextTotal));
-          window.localStorage.setItem(VISIT_TOTAL_REFRESH_KEY, String(Date.now()));
-          if (!registered) window.localStorage.setItem(VISIT_REGISTERED_KEY, "1");
+          window.localStorage.setItem(PAGE_VIEW_TOTAL_KEY, String(nextTotal));
+          window.localStorage.setItem(PAGE_VIEW_TODAY_KEY, String(nextToday));
+          window.localStorage.setItem(PAGE_VIEW_REFRESH_KEY, String(Date.now()));
         } catch {
           // Storage is optional; the page still works when it is unavailable.
         }
-        if (active) setTotal(nextTotal);
+        if (active) setViews({ total: nextTotal, today: nextToday });
       } catch {
         // The aggregate counter is optional and never blocks the rest of the site.
       }
     };
 
-    void loadTotal();
+    void loadViews();
     return () => { active = false; };
-  }, []);
+  }, [views.total]);
 
-  return <span className="footer-visitors" title="Approximate total browser visitors. Each browser is counted once." aria-live="polite"><i aria-hidden="true" />{total === null ? "Total visitors" : `${total.toLocaleString()} visitors`}</span>;
+  const label = views.total === null
+    ? "Views"
+    : `${views.total.toLocaleString()} views${views.today === null ? "" : ` · ${views.today.toLocaleString()} today`}`;
+  return <span className="footer-page-views" title="Total page views across the website" aria-live="polite"><i aria-hidden="true" />{label}</span>;
 }
 
 function SiteFooter() {
-  const taps = useRef<number[]>([]);
-  const findCredits = () => {
-    const now = Date.now();
-    taps.current = [...taps.current.filter((tap) => now - tap < 3500), now];
-    if (taps.current.length >= 5) window.location.href = "/credits";
-  };
   return (
     <footer className="site-footer">
       <span className="footer-credit">Built by <a href="/credits">FLUZ</a> for the Lucky Defense community.</span>
-      <button className="footer-secret" onClick={findCredits}>Unofficial fan project. Game names and assets belong to their respective owners.</button>
       <nav aria-label="Project information">
         <a href="/privacy">Privacy</a>
         <a href="https://github.com/FLUZ13/fluz-ld-tools" target="_blank" rel="noreferrer">GitHub</a>
       </nav>
-      <TotalVisitorCount />
+      <PageViewCount />
     </footer>
   );
 }
@@ -148,15 +141,15 @@ function PrivacyPage() {
     <div className="app-shell tool-shell privacy-shell">
       <header className="app-header"><Brand title="LD Privacy" /><PageNavigation active={null} /></header>
       <main className="privacy-page">
-        <header className="privacy-intro"><span>Last updated August 6, 2026</span><h1>Privacy policy</h1><p>FLUZ Tools is designed to work without accounts, advertising profiles, or personal-data collection. This page explains what remains on your device, what optional features send to Cloudflare, and the controls available to you.</p></header>
-        <section><h2>Information we do not request</h2><p>There is no sign-up or login. We do not ask for your name, email address, password, social profile, payment information, or game account credentials. The site does not use OAuth providers or authentication cookies.</p></section>
+        <header className="privacy-intro"><span>Last updated August 10, 2026</span><h1>Privacy policy</h1><p>FLUZ Tools is designed to work without accounts, advertising profiles, or personal-data collection. This page explains what remains on your device, what optional features send to Cloudflare, and the controls available to you.</p></header>
+        <section><h2>Information we do not request</h2><p>There is no public sign-up or user login. We do not ask visitors for a name, email address, social profile, payment information, or game account credentials. The site does not use OAuth providers.</p></section>
         <section><h2>Browser storage</h2><p>Rune inventories, assignments, board drafts, undo history, anonymous workspace credentials, and preferences are stored locally in your browser using IndexedDB or local storage. BroadcastChannel is used only to keep open tabs on the same browser in sync. This information remains on your device unless you enable a network feature or export it yourself.</p></section>
-        <section><h2>Optional encrypted device sync</h2><p>When Sync Devices is used, the browser creates a random workspace ID and private sync code. Builder state is encrypted in the browser with AES-GCM before transmission. A private Cloudflare R2 bucket receives only encrypted state, an authorization verifier, revision numbers, and creation/update timestamps; the encryption key is not sent separately to the server. Revision history is limited to the most recent 20 versions.</p><p>Anyone who obtains the private sync code may be able to access the encrypted workspace, so it should be treated like a password. Reset Workspace invalidates the previous code, and the Sync Devices dialog can delete the corresponding cloud workspace.</p></section>
+        <section><h2>Encrypted cloud backup</h2><p>The builder creates an anonymous workspace and encrypts its state in the browser with AES-GCM before transmission. A private Cloudflare R2 bucket receives only encrypted state, an authorization verifier, revision numbers, and creation/update timestamps; the encryption key is not sent separately to the server. Revision history is limited to the most recent 20 versions. Cross-device linking is not available.</p></section>
         <section><h2>Screenshot scanner</h2><p>Rune screenshots are decoded and analyzed locally in your browser. They are not uploaded to FLUZ Tools, Cloudflare, or a third-party recognition service. Images and temporary recognition data are discarded when the scanner is closed.</p></section>
         <section><h2>Community board publishing</h2><p>Publishing to Discover sends the board title, selected map, player count, placements, an anonymous browser-generated publisher identifier, and timestamps to Cloudflare D1. Published boards are public. Re-publishing from the same browser replaces its previous entry, and inactive entries expire after 90 days. A report sends the selected reason and an anonymous reporter identifier so repeated reports can be limited.</p></section>
         <section><h2>Backups and share links</h2><p>Downloaded backup files and PNG exports stay on your device until you choose to share them. Board share data is placed in the URL fragment, which browsers do not send to the web server as part of a normal page request.</p></section>
-        <section><h2>Hosting and security</h2><p>The site and APIs run on Cloudflare. Cloudflare may process standard connection information such as IP address, request headers, and security signals to deliver the service, prevent abuse, and apply rate limits. FLUZ Tools does not intentionally store IP addresses in its application database and currently uses no advertising or behavioral analytics service.</p><p>The footer's approximate total visitor count is stored as one aggregate number. A browser registers once using local browser storage; FLUZ Tools does not send or retain a browser identifier, IP address, or browsing history for this counter.</p></section>
-        <section><h2>Your controls</h2><p>You can clear site data through your browser, export or import local backups, reset an anonymous workspace, and delete its encrypted cloud copy. Clearing browser storage without a backup or sync code may permanently remove local data.</p></section>
+        <section><h2>Hosting and security</h2><p>The site and APIs run on Cloudflare. Cloudflare may process standard connection information such as IP address, request headers, and security signals to deliver the service, prevent abuse, and apply rate limits. FLUZ Tools does not intentionally store IP addresses in its application database and currently uses no advertising or behavioral analytics service.</p><p>The footer displays aggregate all-time and daily page-view totals for allowlisted public pages. It does not expose visitor identifiers or page-level analytics.</p><p>A private moderator-only analytics view stores lightweight aggregate counts for allowlisted pages, board shares, comments, and scanner lifecycle outcomes. The browser sends only a locally generated anonymous visitor hash and an allowlisted event/page name. Analytics storage does not receive screenshot files, rune inventories, raw browser identifiers, IP addresses, country, referrers, device details, or scan contents.</p></section>
+        <section><h2>Your controls</h2><p>You can clear site data through your browser and export or import local backup files. Clearing browser storage without an exported backup may permanently remove local data.</p></section>
         <section><h2>Changes and contact</h2><p>This policy may be updated when storage, publishing, or analytics features change. Material changes will be reflected by the date above. The public source code and project contact links are available on the Credits page.</p></section>
         <a href="/rune-builder" className="secondary-button privacy-return">Return to the tools</a>
       </main>
@@ -200,7 +193,6 @@ function LandingPage() {
 function BuilderApp() {
   const store = useBuilderStore();
   const [mobileTab, setMobileTab] = useState<MobileTab>("inventory");
-  const [syncOpen, setSyncOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const recommendations = useMemo(() => optimizeAssignments(store.state), [store.state]);
   const assignments = recommendations.reduce((total, recommendation) => total + recommendation.assignments.length, 0);
@@ -218,16 +210,16 @@ function BuilderApp() {
             <label className="meta-version-select">
               <span className="visually-hidden">Rune meta version</span>
               <select value={store.state.metaVersion} onChange={(event) => store.mutate((draft) => { draft.metaVersion = event.target.value as MetaVersion; draft.metaVersionHasBeenSelected = true; })}>
-                {META_VERSIONS.map((version) => <option key={version} value={version}>v{version}</option>)}
+                {META_VERSIONS.map((version) => <option key={version} value={version}>{metaVersionLabel(version)}</option>)}
               </select>
             </label>
-            <span className={`meta-version-indicator ${store.state.metaVersion === LATEST_META_VERSION ? "current" : "legacy"}`} role="status">Current: v{store.state.metaVersion}{store.state.metaVersion === LATEST_META_VERSION ? " (latest)" : " (older)"}</span>
+            <span className={`meta-version-indicator ${store.state.metaVersion === LATEST_META_VERSION ? "current" : "legacy"}`} role="status">Current: {metaVersionLabel(store.state.metaVersion)}</span>
           </div>
           <nav className="mode-control" aria-label="Game mode">{modes.map((mode) => <button key={mode.id} className={store.state.mode === mode.id ? "active" : ""} onClick={() => store.mutate((draft) => { draft.mode = mode.id; })}>{mode.label}</button>)}</nav>
           <button className="icon-button" onClick={store.undo} disabled={!store.canUndo} title="Undo" aria-label="Undo"><Undo2 /></button>
           <button className="icon-button" onClick={store.redo} disabled={!store.canRedo} title="Redo" aria-label="Redo"><Redo2 /></button>
           <button className="icon-button" onClick={() => { void store.refreshHistory(); setHistoryOpen(true); }} title="Version history" aria-label="Version history"><History /></button>
-          <button className={`sync-button ${store.syncStatus}`} onClick={() => setSyncOpen(true)}><Cloud /><span>{store.syncStatus === "saved" ? "Saved" : store.syncStatus === "saving" ? "Saving" : store.syncStatus === "offline" ? "Offline" : "Sync"}</span></button>
+          <div className={`sync-button ${store.syncStatus}`} role="status" title="Encrypted cloud backup status"><Cloud /><span>{store.syncStatus === "saved" ? "Saved" : store.syncStatus === "saving" ? "Saving" : store.syncStatus === "offline" ? "Offline" : store.syncStatus === "conflict" ? "Review" : "Local"}</span></div>
         </div>
       </header>
 
@@ -246,12 +238,11 @@ function BuilderApp() {
         <h1 className="visually-hidden">Lucky Defense rune builder</h1>
         <div className={`inventory-column mobile-${mobileTab}`}><Inventory state={store.state} mutate={store.mutate} onExport={store.exportBackup} onImport={store.importBackup} /></div>
         <div className={`roster-column mobile-${mobileTab}`}><Roster state={store.state} mutate={store.mutate} /></div>
-        <div className={`results-column mobile-${mobileTab}`}><Results state={store.state} recommendations={recommendations} /></div>
+        <div className={`results-column mobile-${mobileTab}`}><Results state={store.state} recommendations={recommendations} mutate={store.mutate} /></div>
       </main>
 
       <SiteFooter />
 
-      {syncOpen && <SyncDialog syncCode={store.syncCode} status={store.syncStatus} onClose={() => setSyncOpen(false)} onImport={store.importSyncCode} onReset={store.resetWorkspace} />}
       {historyOpen && <HistoryDialog entries={store.history} onRestore={store.restoreHistory} onClose={() => setHistoryOpen(false)} />}
       {store.conflict && <ConflictDialog device={store.conflict.device} cloud={store.conflict.cloud} onResolve={store.resolveConflict} />}
     </div>
@@ -293,12 +284,15 @@ function NotFoundPage() {
 }
 
 export default function App() {
+  useEffect(() => installPageAnalytics(), []);
+
   if (window.location.pathname === "/") return <LandingPage />;
   if (window.location.pathname === "/privacy") return <PrivacyPage />;
   if (window.location.pathname === "/runes") return <RunesPage />;
   if (window.location.pathname === "/rune-builder") return <BuilderApp />;
   if (window.location.pathname === "/board-builder") return <ToolPage active="boards" title="LD Board Builder"><DeferredPage label="Loading board builder"><BoardBuilder /></DeferredPage></ToolPage>;
   if (window.location.pathname === "/discover") return <ToolPage active="discover" title="LD Boards"><DeferredPage label="Loading community boards"><DiscoverBoards /></DeferredPage></ToolPage>;
+  if (window.location.pathname === "/moderator/analytics") return <ToolPage active={null} title="LD Control Station"><DeferredPage label="Loading control station"><ModeratorDashboard /></DeferredPage></ToolPage>;
   if (window.location.pathname === "/calculators") {
     window.history.replaceState(null, "", "/rune-builder");
     return <BuilderApp />;

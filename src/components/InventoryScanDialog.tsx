@@ -1,6 +1,7 @@
 import { ImageUp, LoaderCircle, LockKeyhole, Minus, Plus, ScanLine, Trash2, TriangleAlert, Unlock, Upload } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { DATA, TIER_NAMES, type BuilderState, type RuneTier } from "../model";
+import { trackAnalyticsEvent } from "../lib/analytics";
 import { Modal } from "./Modal";
 import {
   applyScannedInventory,
@@ -71,12 +72,19 @@ export function InventoryScanDialog({ state, mutate, onClose }: InventoryScanDia
   const scan = async () => {
     if (!files.length) { setMessage("Choose at least one Rune inventory screenshot first."); return; }
     setMessage(""); setProgress({ completed: 0, total: files.length });
+    void trackAnalyticsEvent("scanner_started");
     try {
       const result = await scanInventoryScreenshots(files, crop, templates, (completed, total) => setProgress({ completed, total }));
       setImages(result.images);
       setEditing({});
+      if (!result.images.some((image) => image.detections.some((detection) => detection.tier >= 3))) {
+        void trackAnalyticsEvent("scanner_rejected");
+      }
       if (result.warnings.length) setMessage(result.warnings[0]);
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not scan those screenshots."); }
+    } catch (error) {
+      void trackAnalyticsEvent("scanner_error");
+      setMessage(error instanceof Error ? error.message : "Could not scan those screenshots.");
+    }
     finally { setProgress(null); }
   };
 
@@ -94,6 +102,7 @@ export function InventoryScanDialog({ state, mutate, onClose }: InventoryScanDia
     mutate((draft) => {
       draft.inventory = next;
     });
+    void trackAnalyticsEvent("scanner_applied");
     close();
   };
 

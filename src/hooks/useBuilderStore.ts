@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { countOwnedRunes, createDefaultState, migrateBuilderState, reconcileLockedAssignments, resetMetaVersionForPageLoad, type BuilderState } from "../model";
 import { createAnonymousWorkspace, decryptState } from "../lib/crypto";
 import { parseBackup, serializeBackup } from "../lib/backup";
+import { automaticSyncConflictChoice } from "../lib/sync-resolution";
 import {
   appendHistory,
   listHistory,
@@ -122,9 +123,28 @@ export function useBuilderStore() {
         if (error instanceof SyncConflictError) {
           try {
             const remote = await getRemoteState({ ...workspace, revision: error.revision });
-            const cloud = await decryptState(remote.encryptedState, workspace);
-            setConflict({ device: stateRef.current, cloud, serverRevision: remote.revision });
-            setSyncStatus("conflict");
+            const cloud = migrateBuilderState(await decryptState(remote.encryptedState, workspace));
+            const device = stateRef.current;
+            const automaticChoice = automaticSyncConflictChoice(device, cloud);
+            const nextWorkspace = { ...workspace, revision: remote.revision };
+            await saveWorkspace(nextWorkspace);
+            setWorkspace(nextWorkspace);
+            if (!automaticChoice) {
+              setConflict({ device, cloud, serverRevision: remote.revision });
+              setSyncStatus("conflict");
+              return;
+            }
+            setConflict(null);
+            if (automaticChoice === "cloud") {
+              suppressNextSync.current = true;
+              lastSyncedFingerprint.current = stateFingerprint(cloud);
+              stateRef.current = cloud;
+              await saveState(cloud);
+              setState(cloud);
+              setSyncStatus("saved");
+            } else {
+              setSyncStatus("saving");
+            }
             return;
           } catch { /* fall through to offline */ }
         }
@@ -194,16 +214,17 @@ export function useBuilderStore() {
 
   const resolveConflict = useCallback(async (choice: "device" | "cloud" | "newest") => {
     if (!conflict || !workspace) return;
-    const selected = migrateBuilderState(choice === "newest"
-      ? (conflict.device.updatedAt >= conflict.cloud.updatedAt ? conflict.device : conflict.cloud)
-      : conflict[choice]);
+    const selectedChoice = choice === "newest"
+      ? automaticSyncConflictChoice(conflict.device, conflict.cloud) ?? "device"
+      : choice;
+    const selected = migrateBuilderState(conflict[selectedChoice]);
     const nextWorkspace = { ...workspace, revision: conflict.serverRevision };
     await saveWorkspace(nextWorkspace);
     setWorkspace(nextWorkspace);
     setConflict(null);
-    setSyncStatus("saving");
-    if (selected === conflict.cloud) suppressNextSync.current = true;
-    if (selected === conflict.cloud) lastSyncedFingerprint.current = stateFingerprint(selected);
+    setSyncStatus(selectedChoice === "cloud" ? "saved" : "saving");
+    if (selectedChoice === "cloud") suppressNextSync.current = true;
+    if (selectedChoice === "cloud") lastSyncedFingerprint.current = stateFingerprint(selected);
     stateRef.current = selected;
     setState(selected);
   }, [conflict, workspace]);

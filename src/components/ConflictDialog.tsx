@@ -10,7 +10,7 @@ interface ConflictDialogProps {
 
 export function ConflictDialog({ device, cloud, onResolve }: ConflictDialogProps) {
   return (
-    <Modal title="Choose saved version" onClose={() => undefined}>
+    <Modal title="Choose saved version" onClose={() => { void onResolve("newest"); }}>
       <div className="conflict-grid">
         <button onClick={() => void onResolve("device")}><strong>This device</strong><span>{countOwnedRunes(device)} runes</span><time>{new Date(device.updatedAt).toLocaleString()}</time></button>
         <button onClick={() => void onResolve("cloud")}><strong>Other device</strong><span>{countOwnedRunes(cloud)} runes</span><time>{new Date(cloud.updatedAt).toLocaleString()}</time></button>

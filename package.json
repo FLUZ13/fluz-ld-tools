@@ -28,14 +28,14 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "latest",
     "@cloudflare/workers-types": "latest",
-    "@types/node": "^22.10.2",
+    "@types/node": "^26.2.0",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.0.2",
-    "@types/react-dom": "^19.0.2",
-    "@vitejs/plugin-react": "^6.0.4",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.0",
     "typescript": "latest",
-    "vite": "^8.1.5",
-    "vitest": "^4.1.10",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11",
     "wrangler": "latest"
   },
   "overrides": {
